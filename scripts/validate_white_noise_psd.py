@@ -52,7 +52,7 @@ def run_ensemble_validation(
     sigma : float
         Noise standard deviation in signal units (default: 1.0).
     n_realizations : int
-        Number of independent ensemble realizations (default: 1000).
+        Number of independent ensemble realizations (default: 1000). Must be > 1.
     seed : int
         Random seed for numpy.random.default_rng (default: 20261102).
 
@@ -60,7 +60,24 @@ def run_ensemble_validation(
     -------
     dict
         Structured results containing numerical measurements and comparison metrics.
+
+    Raises
+    ------
+    ValueError
+        If any input parameter is outside its valid physical/statistical domain.
     """
+    # Strict validation of input parameters
+    if not isinstance(n_realizations, (int, np.integer)) or n_realizations <= 1:
+        raise ValueError(f"n_realizations must be an integer > 1, got {n_realizations}")
+    if not isinstance(n_samples, (int, np.integer)) or n_samples <= 0:
+        raise ValueError(f"n_samples must be a positive integer, got {n_samples}")
+    if n_samples % 2 != 0:
+        raise ValueError(f"n_samples must be an even integer, got {n_samples}")
+    if not isinstance(f_s, (int, float, np.floating)) or not math.isfinite(f_s) or f_s <= 0:
+        raise ValueError(f"f_s must be a positive finite float, got {f_s}")
+    if not isinstance(sigma, (int, float, np.floating)) or not math.isfinite(sigma) or sigma < 0:
+        raise ValueError(f"sigma must be a non-negative finite float, got {sigma}")
+
     delta_t = 1.0 / f_s
     delta_f = 1.0 / (n_samples * delta_t)
     n_freqs = n_samples // 2 + 1
@@ -70,6 +87,13 @@ def run_ensemble_validation(
     s_interior_expected = expected_white_noise_psd(sigma, delta_t, bin_type="interior")
     s_dc_expected = expected_white_noise_psd(sigma, delta_t, bin_type="dc")
     s_nyq_expected = expected_white_noise_psd(sigma, delta_t, bin_type="nyquist")
+
+    # Theoretical standard errors for ensemble mean over R realizations:
+    # Interior: Var(S_hat) = S_interior^2  => SE(S_bar) = S_interior / sqrt(R)
+    # DC/Nyquist: Var(S_hat) = 2 S_DC^2    => SE(S_bar) = sqrt(2) S_DC / sqrt(R)
+    se_interior_theoretical = s_interior_expected / math.sqrt(n_realizations)
+    se_dc_theoretical = math.sqrt(2.0) * s_dc_expected / math.sqrt(n_realizations)
+    se_nyq_theoretical = math.sqrt(2.0) * s_nyq_expected / math.sqrt(n_realizations)
 
     rng = np.random.default_rng(seed)
 
@@ -108,7 +132,7 @@ def run_ensemble_validation(
 
     # Ensemble statistics across realizations
     psd_mean = psd_sum / n_realizations
-    # Sample variance across realizations for each frequency bin
+    # Empirical sample variance across realizations for each frequency bin
     psd_var = (psd_sq_sum - n_realizations * (psd_mean ** 2)) / (n_realizations - 1)
     psd_sem = np.sqrt(psd_var / n_realizations)
 
@@ -117,6 +141,7 @@ def run_ensemble_validation(
     interior_freqs = freqs[interior_slice]
     interior_means = psd_mean[interior_slice]
     interior_grand_mean = float(np.mean(interior_means))
+    # Standard error of the grand mean averaged over both R realizations and (N/2 - 1) bins
     interior_grand_sem = float(np.sqrt(np.mean(psd_var[interior_slice]) / (n_realizations * (n_freqs - 2))))
 
     rel_diff_interior = (interior_grand_mean - s_interior_expected) / s_interior_expected
@@ -142,23 +167,25 @@ def run_ensemble_validation(
     print(f"1. Interior Frequency Bins ({interior_freqs[0]:.3f} Hz to {interior_freqs[-1]:.3f} Hz, {len(interior_freqs)} bins):")
     print(f"   - Theoretical expectation S_0 = 2 sigma^2 / f_s : {s_interior_expected:.8e} [signal]^2/Hz")
     print(f"   - Measured ensemble grand mean                  : {interior_grand_mean:.8e} [signal]^2/Hz")
-    print(f"   - Standard error of grand mean                  : {interior_grand_sem:.8e} [signal]^2/Hz")
+    print(f"   - Empirical SEM of grand mean                   : {interior_grand_sem:.8e} [signal]^2/Hz")
     print(f"   - Relative deviation                            : {rel_diff_interior:+.4%}")
     print(f"   - Standardized residual (z-score)               : {rel_diff_interior * s_interior_expected / interior_grand_sem:+.2f} sigma")
 
     print(f"\n2. DC Frequency Bin (f = 0.0 Hz, k = 0):")
     print(f"   - Theoretical expectation S_DC = sigma^2 / f_s  : {s_dc_expected:.8e} [signal]^2/Hz")
+    print(f"   - Theoretical SE = sqrt(2) S_DC / sqrt(R)       : {se_dc_theoretical:.8e} ({se_dc_theoretical/s_dc_expected:.2%})")
     print(f"   - Measured ensemble mean                        : {dc_mean:.8e} [signal]^2/Hz")
-    print(f"   - Standard error of mean                        : {dc_sem:.8e} [signal]^2/Hz")
+    print(f"   - Empirical SEM of mean                         : {dc_sem:.8e} [signal]^2/Hz")
     print(f"   - Relative deviation                            : {rel_diff_dc:+.4%}")
-    print(f"   - Standardized residual (z-score)               : {rel_diff_dc * s_dc_expected / dc_sem:+.2f} sigma")
+    print(f"   - Standardized residual (empirical z-score)     : {rel_diff_dc * s_dc_expected / dc_sem:+.2f} sigma")
 
     print(f"\n3. Nyquist Frequency Bin (f = {freqs[-1]:.1f} Hz, k = {n_freqs - 1}):")
     print(f"   - Theoretical expectation S_Nyq = sigma^2 / f_s : {s_nyq_expected:.8e} [signal]^2/Hz")
+    print(f"   - Theoretical SE = sqrt(2) S_Nyq / sqrt(R)      : {se_nyq_theoretical:.8e} ({se_nyq_theoretical/s_nyq_expected:.2%})")
     print(f"   - Measured ensemble mean                        : {nyq_mean:.8e} [signal]^2/Hz")
-    print(f"   - Standard error of mean                        : {nyq_sem:.8e} [signal]^2/Hz")
+    print(f"   - Empirical SEM of mean                         : {nyq_sem:.8e} [signal]^2/Hz")
     print(f"   - Relative deviation                            : {rel_diff_nyq:+.4%}")
-    print(f"   - Standardized residual (z-score)               : {rel_diff_nyq * s_nyq_expected / nyq_sem:+.2f} sigma")
+    print(f"   - Standardized residual (empirical z-score)     : {rel_diff_nyq * s_nyq_expected / nyq_sem:+.2f} sigma")
 
     print(f"\n4. Parseval Power Conservation:")
     print(f"   - Mean frequency-domain integrated PSD          : {mean_integrated_psd:.8e}")
@@ -167,12 +194,13 @@ def run_ensemble_validation(
     print(f"\nTotal execution time: {t_total:.2f} seconds.")
     print("=" * 78)
 
-    # Acceptance criteria
-    # Interior mean relative error within 3 sigma of standard error (~ 0.08% for 1000 trials & 16383 bins)
-    interior_pass = abs(rel_diff_interior) < 0.005  # < 0.5%
-    # DC and Nyquist: each has standard error 1/sqrt(1000) ~ 3.16%; 3 sigma ~ 10%
-    dc_pass = abs(rel_diff_dc) < 0.10
-    nyq_pass = abs(rel_diff_nyq) < 0.10
+    # Acceptance criteria based on mathematically correct standard error:
+    # Interior grand mean: band-averaged over 16383 bins and R=1000 realizations (tolerance 0.5%)
+    interior_pass = abs(rel_diff_interior) < 0.005
+    # DC and Nyquist single bins: theoretical relative SE is sqrt(2)/sqrt(R) = 4.47% for R=1000.
+    # A 3.5-sigma acceptance bound is 3.5 * 4.47% = 15.65%.
+    dc_pass = abs(rel_diff_dc) < 0.1565
+    nyq_pass = abs(rel_diff_nyq) < 0.1565
     parseval_pass = parseval_rel_diff < 1e-12
 
     all_pass = interior_pass and dc_pass and nyq_pass and parseval_pass
@@ -191,6 +219,9 @@ def run_ensemble_validation(
         "s_interior_expected": s_interior_expected,
         "s_dc_expected": s_dc_expected,
         "s_nyq_expected": s_nyq_expected,
+        "se_interior_theoretical": se_interior_theoretical,
+        "se_dc_theoretical": se_dc_theoretical,
+        "se_nyq_theoretical": se_nyq_theoretical,
         "interior_grand_mean": interior_grand_mean,
         "interior_grand_sem": interior_grand_sem,
         "rel_diff_interior": rel_diff_interior,

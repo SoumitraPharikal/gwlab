@@ -89,15 +89,94 @@ class TestContinuousRFFTScaling:
 
         np.testing.assert_allclose(scaled_rfft, delta_t * raw_rfft, rtol=1e-15)
 
-    def test_input_validation(self):
-        with pytest.raises(ValueError, match="1D array"):
-            continuous_rfft(np.zeros((10, 10)), 0.001)
-        with pytest.raises(ValueError, match="even length"):
-            continuous_rfft(np.zeros(11), 0.001)
+
+class TestRealValuedInputValidation:
+    """Systematic validation suite for all real-valued time-series functions (Correction A).
+
+    Tested functions:
+    - continuous_rfft
+    - discrete_parseval_time_energy
+    - validate_parseval_identity
+    - one_sided_periodogram
+    """
+
+    @pytest.fixture(
+        params=[
+            "continuous_rfft",
+            "discrete_parseval_time_energy",
+            "validate_parseval_identity",
+            "one_sided_periodogram",
+        ]
+    )
+    def target_func(self, request):
+        funcs = {
+            "continuous_rfft": continuous_rfft,
+            "discrete_parseval_time_energy": discrete_parseval_time_energy,
+            "validate_parseval_identity": validate_parseval_identity,
+            "one_sided_periodogram": one_sided_periodogram,
+        }
+        return funcs[request.param]
+
+    def test_complex_valued_input_rejection(self, target_func):
+        """Complex inputs must be rejected explicitly without silent truncation of imaginary part."""
+        x_complex = np.array([1.0 + 2.0j, 3.0 - 1.0j, 2.0 + 0.5j, 4.0 + 0.0j])
         with pytest.raises(ValueError, match="real-valued"):
-            continuous_rfft(np.zeros(10, dtype=complex), 0.001)
+            target_func(x_complex, 0.01)
+
+    def test_nan_rejection(self, target_func):
+        """Arrays containing NaN must be rejected with a descriptive error."""
+        x_nan = np.array([1.0, np.nan, 3.0, 4.0])
         with pytest.raises(ValueError, match="finite numbers"):
-            continuous_rfft(np.array([1.0, float("nan")]), 0.001)
+            target_func(x_nan, 0.01)
+
+    def test_positive_infinity_rejection(self, target_func):
+        """Arrays containing +Inf must be rejected."""
+        x_pinf = np.array([1.0, float("inf"), 3.0, 4.0])
+        with pytest.raises(ValueError, match="finite numbers"):
+            target_func(x_pinf, 0.01)
+
+    def test_negative_infinity_rejection(self, target_func):
+        """Arrays containing -Inf must be rejected."""
+        x_ninf = np.array([1.0, float("-inf"), 3.0, 4.0])
+        with pytest.raises(ValueError, match="finite numbers"):
+            target_func(x_ninf, 0.01)
+
+    def test_empty_array_rejection(self, target_func):
+        """Empty arrays must be rejected without causing ZeroDivisionError in delta_f."""
+        x_empty = np.array([], dtype=np.float64)
+        with pytest.raises(ValueError, match="non-empty"):
+            target_func(x_empty, 0.01)
+
+    def test_invalid_dimensionality_rejection(self, target_func):
+        """2D and higher-dimensional arrays must be rejected."""
+        x_2d = np.zeros((2, 4), dtype=np.float64)
+        with pytest.raises(ValueError, match="1D array"):
+            target_func(x_2d, 0.01)
+
+    def test_odd_length_rejection(self, target_func):
+        """Odd-length arrays must be rejected under even-length Nyquist conventions."""
+        x_odd = np.array([1.0, 2.0, 3.0])
+        with pytest.raises(ValueError, match="even number of samples"):
+            target_func(x_odd, 0.01)
+
+    @pytest.mark.parametrize("invalid_dt", [-0.01, 0.0, float("nan"), float("inf")])
+    def test_invalid_sampling_interval_rejection(self, target_func, invalid_dt):
+        """Non-positive or non-finite delta_t must be rejected."""
+        x_valid = np.array([1.0, 2.0, 3.0, 4.0])
+        with pytest.raises(ValueError, match="positive finite float"):
+            target_func(x_valid, invalid_dt)
+
+    def test_valid_zero_valued_input(self, target_func):
+        """Valid zero-valued arrays must be processed successfully without numerical errors."""
+        x_zero = np.zeros(8, dtype=np.float64)
+        result = target_func(x_zero, 0.01)
+        assert result is not None
+
+    def test_valid_integer_input(self, target_func):
+        """Valid real integer arrays must be accepted and processed correctly."""
+        x_int = np.array([1, -2, 3, 0], dtype=np.int64)
+        result = target_func(x_int, 0.01)
+        assert result is not None
 
 
 class TestParsevalIdentity:
@@ -346,7 +425,22 @@ class TestStage11MandatorySummary:
         assert abs(interior_mean - s0) / s0 < 0.03
 
     def test_dc_nyquist_ensemble_psd_half_level(self):
-        """DC/Nyquist ensemble PSD: Correct half-level expectation."""
+        """DC/Nyquist ensemble PSD: Correct half-level expectation with chi^2_1 uncertainty.
+
+        Mathematical Justification (Correction B):
+        ------------------------------------------
+        For real Gaussian white noise, X_0 and X_{N/2} are purely real Gaussians:
+        X_0, X_{N/2} ~ N(0, N sigma^2).
+        Thus |X|^2 ~ N sigma^2 * chi^2_1, giving:
+        Var(S_hat_DC) = 2 * (E[S_hat_DC])^2 = 2 S_DC^2
+        Var(S_hat_Nyquist) = 2 * (E[S_hat_Nyquist])^2 = 2 S_Nyquist^2
+
+        Over R independent realizations:
+        SE(S_bar) = sqrt(2) * S / sqrt(R) = sqrt(2/R) * S.
+        For R = 200:
+        relative SE = sqrt(2 / 200) = 1 / 10 = 10.0%.
+        A 3.5-sigma acceptance bound is 3.5 * 10% = 35.0%.
+        """
         dt = 1.0 / 4096.0
         sigma = 1.0
         s_half = expected_white_noise_psd(sigma, dt, "dc")
@@ -354,13 +448,20 @@ class TestStage11MandatorySummary:
         accum_dc = 0.0
         accum_nyq = 0.0
         n_trials = 200
+
         for _ in range(n_trials):
             n = generate_white_noise(1024, sigma, generator=rng)
             p = one_sided_periodogram(n, dt)
             accum_dc += p[0]
             accum_nyq += p[-1]
+
         mean_dc = accum_dc / n_trials
         mean_nyq = accum_nyq / n_trials
-        # 1/sqrt(200) ~ 7% standard error; 4 sigma ~ 28%
-        assert abs(mean_dc - s_half) / s_half < 0.28
-        assert abs(mean_nyq - s_half) / s_half < 0.28
+
+        se_rel_theoretical = math.sqrt(2.0 / n_trials)  # 0.10 (10.0%)
+        rel_diff_dc = abs(mean_dc - s_half) / s_half
+        rel_diff_nyq = abs(mean_nyq - s_half) / s_half
+
+        # Both DC and Nyquist must be within 3.5 theoretical standard errors
+        assert rel_diff_dc < 3.5 * se_rel_theoretical  # < 0.35
+        assert rel_diff_nyq < 3.5 * se_rel_theoretical  # < 0.35

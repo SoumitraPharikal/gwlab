@@ -37,6 +37,51 @@ from typing import Literal, Tuple
 import numpy as np
 
 
+def _validate_real_time_series(x: object, delta_t: object) -> Tuple[np.ndarray, float]:
+    """Validate 1D real-valued discrete time series and sampling interval.
+
+    Ensures that input is 1D, non-empty, even-length, real-valued, and finite.
+    Prevents silent discarding of imaginary parts by checking dtype before conversion.
+    Supports both integer and floating-point real input.
+
+    Parameters
+    ----------
+    x : array_like
+        Input time-series data.
+    delta_t : float
+        Sampling interval in seconds.
+
+    Returns
+    -------
+    tuple of (np.ndarray, float)
+        Validated array as np.float64, and float delta_t.
+
+    Raises
+    ------
+    ValueError
+        If x is empty, has invalid dimension, odd length, non-real/complex dtype,
+        or non-finite values (NaN, +Inf, -Inf).
+        If delta_t is not a positive finite float.
+    """
+    if not isinstance(delta_t, (int, float, np.floating)) or not math.isfinite(delta_t) or delta_t <= 0:
+        raise ValueError(f"delta_t must be a positive finite float, got {delta_t}")
+
+    # Inspect x without forced float64 cast to prevent silent discarding of imaginary part
+    x_raw = np.asarray(x)
+    if x_raw.ndim != 1:
+        raise ValueError(f"x must be a 1D array, got dimension {x_raw.ndim}")
+    if x_raw.size == 0:
+        raise ValueError("x must be a non-empty array")
+    if x_raw.size % 2 != 0:
+        raise ValueError(f"x must have an even number of samples, got {x_raw.size}")
+    if np.iscomplexobj(x_raw):
+        raise ValueError(f"x must be real-valued, got complex dtype {x_raw.dtype}")
+    if not np.all(np.isfinite(x_raw)):
+        raise ValueError("x must contain only finite numbers (no NaN or Inf)")
+
+    return x_raw.astype(np.float64, copy=False), float(delta_t)
+
+
 def build_frequency_grid(n_samples: int, delta_t: float) -> np.ndarray:
     """Construct the one-sided physical frequency grid for an even-length real time series.
 
@@ -97,20 +142,9 @@ def continuous_rfft(x: np.ndarray, delta_t: float) -> np.ndarray:
         If x is not 1D, has odd length, contains non-finite values, or is complex.
         If delta_t is not a positive finite float.
     """
-    x_arr = np.asarray(x)
-    if x_arr.ndim != 1:
-        raise ValueError(f"x must be a 1D array, got dimension {x_arr.ndim}")
-    if x_arr.size == 0 or x_arr.size % 2 != 0:
-        raise ValueError(f"x must have non-zero even length, got {x_arr.size}")
-    if np.iscomplexobj(x_arr):
-        raise ValueError("x must be real-valued")
-    if not np.all(np.isfinite(x_arr)):
-        raise ValueError("x must contain only finite numbers")
-    if not isinstance(delta_t, (int, float, np.floating)) or not math.isfinite(delta_t) or delta_t <= 0:
-        raise ValueError(f"delta_t must be a positive finite float, got {delta_t}")
-
+    x_arr, dt = _validate_real_time_series(x, delta_t)
     unnormalised_rfft = np.fft.rfft(x_arr)
-    return delta_t * unnormalised_rfft
+    return dt * unnormalised_rfft
 
 
 def discrete_parseval_time_energy(x: np.ndarray, delta_t: float) -> float:
@@ -130,13 +164,8 @@ def discrete_parseval_time_energy(x: np.ndarray, delta_t: float) -> float:
     float
         Time-domain discrete energy sum with units of [x]^2 * seconds.
     """
-    x_arr = np.asarray(x, dtype=np.float64)
-    if x_arr.ndim != 1 or x_arr.size % 2 != 0:
-        raise ValueError("x must be a 1D array with even length")
-    if not (math.isfinite(delta_t) and delta_t > 0):
-        raise ValueError("delta_t must be positive and finite")
-
-    return float(delta_t * np.sum(x_arr ** 2))
+    x_arr, dt = _validate_real_time_series(x, delta_t)
+    return float(dt * np.sum(x_arr ** 2))
 
 
 def discrete_parseval_freq_energy(
@@ -163,13 +192,20 @@ def discrete_parseval_freq_energy(
     float
         Frequency-domain folded energy sum with units of [x]^2 * seconds.
     """
-    X_arr = np.asarray(X, dtype=np.complex128)
-    if X_arr.ndim != 1 or X_arr.size < 2:
-        raise ValueError("X must be a 1D array of at least 2 bins (DC and Nyquist)")
-    if not (math.isfinite(delta_t) and delta_t > 0):
-        raise ValueError("delta_t must be positive and finite")
-    if not (math.isfinite(delta_f) and delta_f > 0):
-        raise ValueError("delta_f must be positive and finite")
+    if not isinstance(delta_t, (int, float, np.floating)) or not math.isfinite(delta_t) or delta_t <= 0:
+        raise ValueError(f"delta_t must be a positive finite float, got {delta_t}")
+    if not isinstance(delta_f, (int, float, np.floating)) or not math.isfinite(delta_f) or delta_f <= 0:
+        raise ValueError(f"delta_f must be a positive finite float, got {delta_f}")
+
+    X_raw = np.asarray(X)
+    if X_raw.ndim != 1:
+        raise ValueError(f"X must be a 1D array, got dimension {X_raw.ndim}")
+    if X_raw.size < 2:
+        raise ValueError(f"X must have at least 2 bins (DC and Nyquist), got {X_raw.size}")
+    if not np.all(np.isfinite(X_raw)):
+        raise ValueError("X must contain only finite numbers (no NaN or Inf)")
+
+    X_arr = X_raw.astype(np.complex128, copy=False)
 
     # Squared magnitudes of rfft coefficients
     sq_mag = np.abs(X_arr) ** 2
@@ -188,6 +224,9 @@ def validate_parseval_identity(
 ) -> Tuple[float, float, float]:
     """Validate discrete Parseval energy balance for a real-valued time series.
 
+    Validates inputs strictly before constructing the frequency step \\Delta f,
+    preventing any potential division-by-zero on empty input.
+
     Parameters
     ----------
     x : np.ndarray
@@ -202,13 +241,13 @@ def validate_parseval_identity(
         relative_error = |time_energy - freq_energy| / time_energy
         (or absolute difference if time_energy == 0).
     """
-    x_arr = np.asarray(x, dtype=np.float64)
+    x_arr, dt = _validate_real_time_series(x, delta_t)
     n_samples = x_arr.size
-    delta_f = 1.0 / (n_samples * delta_t)
+    delta_f = 1.0 / (n_samples * dt)
 
-    e_time = discrete_parseval_time_energy(x_arr, delta_t)
+    e_time = discrete_parseval_time_energy(x_arr, dt)
     X = np.fft.rfft(x_arr)
-    e_freq = discrete_parseval_freq_energy(X, delta_t, delta_f)
+    e_freq = discrete_parseval_freq_energy(X, dt, delta_f)
 
     if e_time == 0.0:
         rel_err = abs(e_time - e_freq)
@@ -246,18 +285,13 @@ def one_sided_periodogram(x: np.ndarray, delta_t: float) -> np.ndarray:
     np.ndarray
         1D real float array of length N/2 + 1 containing the one-sided PSD estimate.
     """
-    x_arr = np.asarray(x, dtype=np.float64)
-    if x_arr.ndim != 1 or x_arr.size % 2 != 0:
-        raise ValueError("x must be a 1D array with even length")
-    if not (math.isfinite(delta_t) and delta_t > 0):
-        raise ValueError("delta_t must be positive and finite")
-
+    x_arr, dt = _validate_real_time_series(x, delta_t)
     n_samples = x_arr.size
     X = np.fft.rfft(x_arr)
     sq_mag = np.abs(X) ** 2
 
     # Weighting: 2 * delta_t / N for interior bins, 1 * delta_t / N for DC and Nyquist
-    scale = delta_t / n_samples
+    scale = dt / n_samples
     psd = 2.0 * scale * sq_mag
     psd[0] = scale * sq_mag[0]
     psd[-1] = scale * sq_mag[-1]
