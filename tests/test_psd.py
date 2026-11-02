@@ -474,8 +474,8 @@ class TestPseudoCovariance:
         assert res["ratio_P12"][-1] == pytest.approx(1.0, rel=1e-12)
         assert res["rho_full"][-1] == pytest.approx(res["rw_squared"], rel=1e-12)
 
-    def test_tukey_window_analysis_band_suppression(self):
-        """For Tukey window (alpha=0.25), pseudo-covariance is suppressed in the analysis band."""
+    def test_tukey_window_interior_bin_suppression(self):
+        """For Tukey window (alpha=0.25), pseudo-covariance is suppressed in the interior-bin validation interval."""
         M = 4096
         w = tukey_window(M, alpha=0.25)
         res = discrete_pseudo_covariance_ratios(w, overlap_samples=2048)
@@ -493,6 +493,78 @@ class TestPseudoCovariance:
         assert res["ratio_P11"][1] == pytest.approx(0.1509, abs=1e-3)
         assert res["ratio_P12"][1] == pytest.approx(0.2829, abs=1e-3)
         assert res["rel_diff"][1] > 0.05  # +5.6% deviation
+
+    def test_odd_length_pseudo_covariance_matches_direct_discrete_sum(self):
+        """Correction A: For odd M (e.g. M=255, overlap=127), P12 must match direct discrete phase sum."""
+        M = 255
+        overlap = 127
+        H = M - overlap  # 128
+        # Use a smooth window of odd length 255
+        j = np.arange(M, dtype=np.float64)
+        w = np.sin(np.pi * (j + 0.5) / M)
+
+        res = discrete_pseudo_covariance_ratios(w, overlap_samples=overlap)
+
+        # Independent direct discrete phase-sum calculation
+        n_freqs = M // 2 + 1  # 128
+        w_overlap = w[:overlap] * w[H:]
+        P12_indep = np.empty(n_freqs, dtype=np.complex128)
+        l_arr = np.arange(overlap, dtype=np.float64)
+        for k_idx in range(n_freqs):
+            prefactor = np.exp(-2j * np.pi * H * k_idx / float(M))
+            sum_val = np.sum(w_overlap * np.exp(-4j * np.pi * l_arr * k_idx / float(M)))
+            P12_indep[k_idx] = prefactor * sum_val
+
+        np.testing.assert_allclose(res["P12"], P12_indep, rtol=1e-12, atol=1e-12)
+
+        # Also confirm independent C12 and rw_squared
+        C12_indep = float(np.sum(w_overlap))
+        assert res["C12"] == pytest.approx(C12_indep, rel=1e-12)
+        C11_indep = float(np.sum(w ** 2))
+        assert res["C11"] == pytest.approx(C11_indep, rel=1e-12)
+        assert res["rw_squared"] == pytest.approx((C12_indep / C11_indep) ** 2, rel=1e-12)
+
+    def test_even_length_optimized_matches_direct_discrete_sum(self):
+        """Correction A: For even M with 2*overlap == M, FFT shortcut matches direct discrete phase sum."""
+        M = 256
+        overlap = 128
+        H = M - overlap  # 128
+        w = tukey_window(M, alpha=0.25)
+
+        res = discrete_pseudo_covariance_ratios(w, overlap_samples=overlap)
+
+        # Independent direct discrete phase-sum calculation
+        n_freqs = M // 2 + 1
+        w_overlap = w[:overlap] * w[H:]
+        P12_indep = np.empty(n_freqs, dtype=np.complex128)
+        l_arr = np.arange(overlap, dtype=np.float64)
+        for k_idx in range(n_freqs):
+            prefactor = np.exp(-2j * np.pi * H * k_idx / float(M))
+            sum_val = np.sum(w_overlap * np.exp(-4j * np.pi * l_arr * k_idx / float(M)))
+            P12_indep[k_idx] = prefactor * sum_val
+
+        np.testing.assert_allclose(res["P12"], P12_indep, rtol=1e-12, atol=1e-12)
+
+    def test_even_length_non_50_percent_overlap_matches_direct_discrete_sum(self):
+        """Correction A: For even M with 2*overlap != M (e.g. 25% overlap), P12 matches direct sum."""
+        M = 256
+        overlap = 64
+        H = M - overlap  # 192
+        w = tukey_window(M, alpha=0.25)
+
+        res = discrete_pseudo_covariance_ratios(w, overlap_samples=overlap)
+
+        # Independent direct discrete phase-sum calculation
+        n_freqs = M // 2 + 1
+        w_overlap = w[:overlap] * w[H:]
+        P12_indep = np.empty(n_freqs, dtype=np.complex128)
+        l_arr = np.arange(overlap, dtype=np.float64)
+        for k_idx in range(n_freqs):
+            prefactor = np.exp(-2j * np.pi * H * k_idx / float(M))
+            sum_val = np.sum(w_overlap * np.exp(-4j * np.pi * l_arr * k_idx / float(M)))
+            P12_indep[k_idx] = prefactor * sum_val
+
+        np.testing.assert_allclose(res["P12"], P12_indep, rtol=1e-12, atol=1e-12)
 
 
 # =====================================================================

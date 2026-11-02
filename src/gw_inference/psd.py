@@ -450,7 +450,11 @@ def discrete_pseudo_covariance_ratios(
         w_overlap = w[:overlap] * w[H:]
         C12 = float(np.sum(w_overlap))
         phase_prefactor = np.exp(-2j * np.pi * H * k / float(M))
-        if overlap == M // 2:
+        # The FFT shortcut reduces \sum w_{overlap}[l] e^{-4\pi i l k / M} to a length-overlap DFT
+        # \sum w_{overlap}[l] e^{-2\pi i l k / overlap} if and only if 2 * overlap == M
+        # (which requires M to be even). For all other cases (odd M or overlap != M/2),
+        # use the exact direct discrete phase sum.
+        if 2 * overlap == M:
             ov_fft = np.fft.fft(w_overlap)
             idx_k_ov = np.arange(n_freqs) % overlap
             P12 = phase_prefactor * ov_fft[idx_k_ov]

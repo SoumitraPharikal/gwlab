@@ -90,7 +90,7 @@ GW-matched-filtering-and-baysian-interference/
 ├── tests/
 │   ├── test_conventions.py                         <- 86 unit tests for Fourier conventions & Parseval
 │   ├── test_noise.py                               <- 13 unit tests for noise generator & statistics
-│   └── test_psd.py                                 <- 55 unit tests for Welch PSD, Tukey, and median
+│   └── test_psd.py                                 <- 58 unit tests for Welch PSD, Tukey, and median
 │
 ├── scripts/
 │   ├── validate_white_noise_psd.py                 <- 1000-realization Monte Carlo validation script
@@ -132,4 +132,4 @@ python scripts/validate_welch_psd.py --n-realizations 300 --seed 42
 ## 6. Scientific Review Status
 - **Stage 0:** APPROVED by independent scientific reviewer (ChatGPT).
 - **Stage 1.1:** APPROVED by independent scientific reviewer (ChatGPT).
-- **Stage 1.2:** Revised, tested (147 tests passing), and submitted for independent evaluation.
+- **Stage 1.2:** Final edge-case and contract corrections applied, tested (157 tests passing), and submitted for independent evaluation.
