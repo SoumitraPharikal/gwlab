@@ -18,29 +18,34 @@ The project is executed in strictly supervised stages, with formal independent s
 
 ---
 
-## 2. Current Implementation Status: Stage 1.1
+## 2. Current Implementation Status: Stage 1.2
 
-**Stage 1.1: Discrete Fourier Conventions, Scaling, and Synthetic Time-Series Generation** is currently implemented and under review.
+**Stage 1.1:** Formally APPROVED by independent scientific reviewer.
+**Stage 1.2: Welch Power Spectral Density Estimation** is implemented, validated, and awaiting formal review.
 
-### Scope of Stage 1.1
-- [x] Discrete Fourier transform conventions and frequency-grid construction.
-- [x] Continuous/discrete Fourier transform scaling ($\tilde{x}(f_k) \simeq \Delta t X_k$).
-- [x] Real-to-complex FFT (`rfft`) folding and one-sided periodogram normalization.
-- [x] Numerical validation of the discrete Parseval energy identity across deterministic and random signals (relative error $< 10^{-12}$).
-- [x] Reproducible synthetic Gaussian white-noise generation (`numpy.random.default_rng`).
-- [x] Controlled 1000-realization Monte Carlo ensemble validation of white-noise periodogram normalization against $S_0 = 2\sigma^2 / f_s$.
-- [x] Automated unit test suite (44 tests, 100% passing).
-- [x] Technical implementation report (`reports/Stage_1_1_Implementation_Report.md`).
+### Scope of Stage 1.2
+- [x] Discrete symmetric Tukey window generation with exact half-sample midpoint cosine arguments ($\alpha = 0.25$, $M = 32{,}768$, $M_{\mathrm{taper}} = 4096$).
+- [x] Exact discrete window power normalization factor $S_2 = \frac{1}{M}\sum w_j^2$ and coherent gain $S_1 = \frac{1}{M}\sum w_j$.
+- [x] Configurable segment extraction with non-truncated slicing, trailing data safety, and hop length $H = M - N_{\mathrm{overlap}}$.
+- [x] Single-segment windowed one-sided periodogram calculation matching Stage 1.1 when unwindowed ($w_j \equiv 1, S_2 = 1$).
+- [x] Standard Welch arithmetic mean PSD estimator.
+- [x] Finite-sample bias-corrected Welch median PSD estimator with odd/even parity formulas:
+  - Odd $K = 2L+1$: $C(K) = \sum_{j=L+1}^{2L+1} \frac{1}{j}$ ($C(15) = 0.725372$, $C(255) = 0.695104$).
+  - Even $K = 2L$: $C(K) = \sum_{j=L+1}^{2L} \frac{1}{j} + \frac{1}{2L}$.
+- [x] Strict gating and documentation for median overlap correlation caveats (`allow_correlated_median=False` by default).
+- [x] Automated test suite (137 tests total: 99 Stage 1.1 tests + 38 Stage 1.2 tests, 100% passing).
+- [x] Numerical validation script (`scripts/validate_welch_psd.py`) covering white noise, Parseval conservation, median bias correction, coloured noise AR(1) broad spectral recovery, and empirical overlap correlation $\hat{\rho}_P \approx r_w^2 \approx 0.1975$.
+- [x] Technical implementation report (`reports/Stage_1_2_Implementation_Report.md`).
 
 ### Strict Execution Boundary
-The following belong to subsequent stages and are **strictly excluded** from Stage 1.1:
-- Welch PSD estimation, segment windowing, or median-Welch bias correction (Stage 1.2).
-- Overlapping-segment covariance and pseudo-covariance estimation (Stage 1.2).
-- Butterworth bandpass conditioning and edge transient trimming (Stage 1.2).
-- Noise-weighted inner products and matched filter complex SNR time-series (Stage 1.3–1.4).
+The following belong to subsequent stages and remain **strictly excluded** from Stage 1.2:
+- Butterworth bandpass filtering, `filtfilt`, and edge-transient trimming (Stage 1.3).
+- Frequency-domain noise whitening and normalized residuals (Stage 1.3).
+- Noise-weighted inner products, optimal SNR, and matched filtering (Stage 1.4).
 - Waveform generation (`TaylorF2`, `IMRPhenomD`) (Stage 1.5).
-- Likelihood evaluation, phase marginalization, and nested sampling (Stage 1.6+).
-- GWOSC strain data download or detector processing (Stage 1.7+).
+- Whittle likelihood evaluation and phase marginalization (Stage 1.6).
+- MCMC / Nested sampling parameter estimation (Stage 1.7+).
+- GWOSC strain data download or real detector data analysis (Stage 1.8+).
 
 ---
 
@@ -80,17 +85,21 @@ GW-matched-filtering-and-baysian-interference/
 │   └── gw_inference/
 │       ├── __init__.py                             <- Package exports
 │       ├── conventions.py                          <- FFT scaling, frequency grid, Parseval, periodogram
-│       └── noise.py                                <- Reproducible Gaussian white-noise generator
+│       ├── noise.py                                <- Reproducible Gaussian white-noise generator
+│       └── psd.py                                  <- Welch PSD estimation (mean & median), Tukey windowing
 │
 ├── tests/
-│   ├── test_conventions.py                         <- 34 unit tests for Fourier conventions & Parseval
-│   └── test_noise.py                               <- 10 unit tests for noise generator & statistics
+│   ├── test_conventions.py                         <- 86 unit tests for Fourier conventions & Parseval
+│   ├── test_noise.py                               <- 13 unit tests for noise generator & statistics
+│   └── test_psd.py                                 <- 38 unit tests for Welch PSD, Tukey, and median
 │
 ├── scripts/
-│   └── validate_white_noise_psd.py                 <- 1000-realization Monte Carlo validation script
+│   ├── validate_white_noise_psd.py                 <- 1000-realization Monte Carlo validation script
+│   └── validate_welch_psd.py                       <- Stage 1.2 Welch PSD numerical validation script
 │
 ├── reports/
-│   └── Stage_1_1_Implementation_Report.md         <- Detailed technical report for scientific reviewer
+│   ├── Stage_1_1_Implementation_Report.md         <- Stage 1.1 technical report
+│   └── Stage_1_2_Implementation_Report.md         <- Stage 1.2 technical report
 │
 └── Stage_0_*                                       <- Historical Stage 0 scientific audit documents
 ```
@@ -106,16 +115,22 @@ GW-matched-filtering-and-baysian-interference/
 
 ### Running the Test Suite
 ```bash
-python -m pytest tests -v
+pytest
 ```
 
-### Running the 1000-Realization Ensemble Validation
+### Running Stage 1.1 White-Noise Periodogram Validation
 ```bash
 python scripts/validate_white_noise_psd.py --realizations 1000 --seed 20261102
+```
+
+### Running Stage 1.2 Welch PSD Numerical Validation
+```bash
+python scripts/validate_welch_psd.py --n-realizations 300 --seed 42
 ```
 
 ---
 
 ## 6. Scientific Review Status
 - **Stage 0:** APPROVED by independent scientific reviewer (ChatGPT).
-- **Stage 1.1:** Complete, tested, and awaiting formal reviewer evaluation.
+- **Stage 1.1:** APPROVED by independent scientific reviewer (ChatGPT).
+- **Stage 1.2:** Complete, tested (137 tests passing), and submitted for independent evaluation.
