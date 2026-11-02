@@ -28,13 +28,11 @@ The project is executed in strictly supervised stages, with formal independent s
 - [x] Exact discrete window power normalization factor $S_2 = \frac{1}{M}\sum w_j^2$ and coherent gain $S_1 = \frac{1}{M}\sum w_j$.
 - [x] Configurable segment extraction with non-truncated slicing, trailing data safety, and hop length $H = M - N_{\mathrm{overlap}}$.
 - [x] Single-segment windowed one-sided periodogram calculation matching Stage 1.1 when unwindowed ($w_j \equiv 1, S_2 = 1$).
-- [x] Standard Welch arithmetic mean PSD estimator.
-- [x] Finite-sample bias-corrected Welch median PSD estimator with odd/even parity formulas:
-  - Odd $K = 2L+1$: $C(K) = \sum_{j=L+1}^{2L+1} \frac{1}{j}$ ($C(15) = 0.725372$, $C(255) = 0.695104$).
-  - Even $K = 2L$: $C(K) = \sum_{j=L+1}^{2L} \frac{1}{j} + \frac{1}{2L}$.
-- [x] Strict gating and documentation for median overlap correlation caveats (`allow_correlated_median=False` by default).
-- [x] Automated test suite (137 tests total: 99 Stage 1.1 tests + 38 Stage 1.2 tests, 100% passing).
-- [x] Numerical validation script (`scripts/validate_welch_psd.py`) covering white noise, Parseval conservation, median bias correction, coloured noise AR(1) broad spectral recovery, and empirical overlap correlation $\hat{\rho}_P \approx r_w^2 \approx 0.1975$.
+- [x] Standard Welch arithmetic mean PSD estimator with generalized all-lags variance inflation factor $\kappa_{\mathrm{overlap}} = 1 + 2 \sum_{\ell=1}^{\ell_{\max}} (1 - \ell/K) r_\ell^2$.
+- [x] Raw sample median Welch PSD estimation available across arbitrary overlap configurations.
+- [x] Finite-sample bias-corrected Welch median PSD estimator ($C(K)$ for odd/even $K$) gated behind explicit caller assertion of independent exponential periodograms (`assume_independent_exponential_periodograms=True`) and strictly rejected for overlapping segments.
+- [x] Automated test suite (147 tests total: 99 Stage 1.1 tests + 48 Stage 1.2 tests, 100% passing).
+- [x] Statistically calibrated numerical validation script (`scripts/validate_welch_psd.py`) using realization-level band statistics, standardized $z$-score deviations, bootstrap correlation uncertainty, and diagnostic coloured-noise AR(1) comparison.
 - [x] Technical implementation report (`reports/Stage_1_2_Implementation_Report.md`).
 
 ### Strict Execution Boundary
@@ -91,7 +89,7 @@ GW-matched-filtering-and-baysian-interference/
 ├── tests/
 │   ├── test_conventions.py                         <- 86 unit tests for Fourier conventions & Parseval
 │   ├── test_noise.py                               <- 13 unit tests for noise generator & statistics
-│   └── test_psd.py                                 <- 38 unit tests for Welch PSD, Tukey, and median
+│   └── test_psd.py                                 <- 48 unit tests for Welch PSD, Tukey, and median
 │
 ├── scripts/
 │   ├── validate_white_noise_psd.py                 <- 1000-realization Monte Carlo validation script
@@ -133,4 +131,4 @@ python scripts/validate_welch_psd.py --n-realizations 300 --seed 42
 ## 6. Scientific Review Status
 - **Stage 0:** APPROVED by independent scientific reviewer (ChatGPT).
 - **Stage 1.1:** APPROVED by independent scientific reviewer (ChatGPT).
-- **Stage 1.2:** Complete, tested (137 tests passing), and submitted for independent evaluation.
+- **Stage 1.2:** Revised, tested (147 tests passing), and submitted for independent evaluation.

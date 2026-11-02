@@ -20,7 +20,9 @@ from gw_inference.psd import (
     single_segment_psd,
     tukey_window,
     welch_psd,
+    welch_variance_inflation,
     window_coherent_gain,
+    window_multi_lag_correlations,
     window_overlap_correlation,
     window_power,
 )
@@ -38,6 +40,8 @@ __all__ = [
     "window_power",
     "window_coherent_gain",
     "window_overlap_correlation",
+    "window_multi_lag_correlations",
+    "welch_variance_inflation",
     "extract_segments",
     "single_segment_psd",
     "median_bias_factor",

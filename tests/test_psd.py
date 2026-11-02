@@ -2,13 +2,15 @@
 
 Covers:
 - Section A: Frequency grid properties and Stage 1.1 consistency.
-- Section B: Window normalization (Tukey window, S_2 power, S_1 coherent gain, r_w overlap correlation).
-- Section C: Single-segment PSD consistency with Stage 1.1 one-sided periodogram.
+- Section B: Window normalization (Tukey window, S_2 power, S_1 coherent gain, r_w overlap correlation, multi-lag correlations).
+- Section C: Single-segment PSD consistency, exact single-window application proof, and Parseval balance.
 - Section D: White-noise ensemble PSD expectation (interior, DC, Nyquist).
 - Section E: Segment slicing, overlap configurations, and edge cases.
 - Section F: Coloured-noise spectral recovery using exact analytical AR(1) process.
-- Section G: Median-Welch estimator, finite-sample bias factor C(K), outlier resilience, and overlap gating.
-- Section H: Comprehensive input and parameter validation.
+- Section G: Generalized all-lags Welch variance inflation factor kappa_overlap (Correction C).
+- Section H: Redesigned median-Welch estimator, raw median, independent exponential assertion gating (Correction B).
+- Section I: Comprehensive input and parameter validation.
+- Section J: Validation script integration smoke tests.
 """
 
 from __future__ import annotations
@@ -30,7 +32,9 @@ from gw_inference.psd import (
     single_segment_psd,
     tukey_window,
     welch_psd,
+    welch_variance_inflation,
     window_coherent_gain,
+    window_multi_lag_correlations,
     window_overlap_correlation,
     window_power,
 )
@@ -76,11 +80,11 @@ class TestFrequencyGrid:
 
 
 # =====================================================================
-# SECTION B: Window Normalization
+# SECTION B: Window Normalization and Multi-Lag Correlations
 # =====================================================================
 
 class TestWindowNormalization:
-    """Validate discrete Tukey window formulas, power, coherent gain, and overlap correlation."""
+    """Validate discrete Tukey window formulas, power, coherent gain, and overlap correlations."""
 
     def test_baseline_tukey_quantities(self):
         """Verify M = 32,768, alpha = 0.25 discrete values against Stage 0.6 derivations."""
@@ -102,7 +106,7 @@ class TestWindowNormalization:
         s1 = window_coherent_gain(w)
         assert s1 == pytest.approx(7.0 / 8.0, rel=1e-7)
 
-        # 50% overlap correlation r_w
+        # 50% overlap correlation r_1
         rw = window_overlap_correlation(w, overlap_samples=M // 2)
         assert rw == pytest.approx(4.0 / 9.0, rel=1e-7)
 
@@ -132,6 +136,27 @@ class TestWindowNormalization:
         rw_zero = window_overlap_correlation(w, overlap_samples=0)
         assert rw_zero == 0.0
 
+    def test_multi_lag_correlations(self):
+        M = 256
+        w = tukey_window(M, alpha=0.25)
+
+        # Hop = M (zero overlap) -> empty lags
+        r_zero = window_multi_lag_correlations(w, hop_length=M)
+        assert r_zero.size == 0
+
+        # Hop = 128 (50% overlap) -> exactly 1 lag
+        r_50 = window_multi_lag_correlations(w, hop_length=128)
+        assert r_50.size == 1
+        assert r_50[0] == pytest.approx(4.0 / 9.0, rel=1e-6)
+
+        # Hop = 64 (75% overlap) -> exactly 3 lags
+        r_75 = window_multi_lag_correlations(w, hop_length=64)
+        assert r_75.size == 3
+        # Reviewer's exact benchmark values
+        assert r_75[0] == pytest.approx(0.740741, rel=1e-5)
+        assert r_75[1] == pytest.approx(0.444444, rel=1e-5)
+        assert r_75[2] == pytest.approx(0.148148, rel=1e-5)
+
     def test_invalid_window_parameters(self):
         with pytest.raises(ValueError, match="length must be a positive integer"):
             tukey_window(0)
@@ -143,14 +168,16 @@ class TestWindowNormalization:
             tukey_window(64, alpha=1.1)
         with pytest.raises(ValueError, match="alpha must be a finite float between 0.0 and 1.0"):
             tukey_window(64, alpha=float("nan"))
+        with pytest.raises(ValueError, match="hop_length must be a positive integer"):
+            window_multi_lag_correlations(np.ones(64), hop_length=0)
 
 
 # =====================================================================
-# SECTION C: Single-Segment Consistency
+# SECTION C: Single-Segment Consistency and Single-Window Proof
 # =====================================================================
 
 class TestSingleSegmentConsistency:
-    """Verify single-segment PSD consistency with Stage 1.1 conventions."""
+    """Verify single-segment PSD consistency, exact single-window application, and Parseval identity."""
 
     def test_unwindowed_matches_stage_1_1_periodogram(self):
         rng = np.random.default_rng(42)
@@ -168,6 +195,31 @@ class TestSingleSegmentConsistency:
         np.testing.assert_allclose(psd_none, psd_stage11, rtol=1e-14)
         np.testing.assert_allclose(psd_ones, psd_stage11, rtol=1e-14)
 
+    def test_window_applied_exactly_once(self):
+        """Regression test verifying that the window is applied exactly once and not squared.
+
+        If single_segment_psd applies w once to x (x_win = x * w), then
+        single_segment_psd(x, dt, window=w) * S_2 is identical to
+        single_segment_psd(x * w, dt, window=None) * 1.0.
+        If the window had been squared (applied twice), this identity would fail.
+        """
+        rng = np.random.default_rng(303)
+        M = 256
+        delta_t = 1.0 / 1024.0
+        x = rng.normal(0.0, 1.0, size=M)
+        w = tukey_window(M, alpha=0.25)
+        s2 = window_power(w)
+
+        psd_windowed = single_segment_psd(x, delta_t, window=w)
+        psd_premultiplied_unwindowed = single_segment_psd(x * w, delta_t, window=None)
+
+        # They must agree exactly when accounting for S_2
+        np.testing.assert_allclose(psd_windowed * s2, psd_premultiplied_unwindowed, rtol=1e-14)
+
+        # Crucially: passing pre-multiplied data with window=w would square the window, which differs
+        psd_window_squared = single_segment_psd(x * w, delta_t, window=w)
+        assert not np.allclose(psd_windowed, psd_window_squared)
+
     def test_single_segment_welch_matches_single_segment_psd(self):
         rng = np.random.default_rng(101)
         M = 256
@@ -182,7 +234,7 @@ class TestSingleSegmentConsistency:
         np.testing.assert_allclose(psd_welch, psd_single, rtol=1e-14)
 
     def test_windowed_parseval_expectation(self):
-        """Verify that sum(S(f) * df) equals sum(w^2 x^2) / (M * S_2)."""
+        """Verify that sum(S(f) * df) equals sum((w * x)^2) / (M * S_2)."""
         rng = np.random.default_rng(202)
         M = 1024
         delta_t = 1.0 / 4096.0
@@ -218,7 +270,6 @@ class TestWhiteNoisePSD:
         expected_nyquist = expected_white_noise_psd(sigma, delta_t, bin_type="nyquist")
 
         rng = np.random.default_rng(12345)
-        # Use 1024 samples per realization (7 segments with 50% overlap of length 256)
         n_samples = 1024
 
         psd_sum = np.zeros(M // 2 + 1, dtype=np.float64)
@@ -229,9 +280,8 @@ class TestWhiteNoisePSD:
 
         psd_mean = psd_sum / n_realizations
 
-        # Interior bins: mean over 10 <= k <= M/2 - 10 to avoid any boundary window leakage
+        # Interior bins: mean over 10 <= k <= M/2 - 10
         interior_measured = np.mean(psd_mean[10:-10])
-        # Standard error: for 300 realizations, relative SE is roughly 1 / sqrt(300 * K_eff) < 2%
         assert interior_measured == pytest.approx(expected_interior, rel=0.04)
 
         # DC and Nyquist check (factor of 2 lower)
@@ -256,13 +306,11 @@ class TestSegmentExtraction:
     def test_50_percent_overlap(self):
         x = np.arange(100, dtype=np.float64)
         segs = extract_segments(x, segment_length=20, overlap_samples=10)
-        # Hop is 10. Segments start at 0, 10, 20, 30, 40, 50, 60, 70, 80 (9 segments, last ends at 100)
         assert segs.shape == (9, 20)
         for m in range(9):
             np.testing.assert_array_equal(segs[m], x[m * 10 : m * 10 + 20])
 
     def test_non_divisible_trailing_data_discarded(self):
-        # 105 samples, segment=20, overlap=10 -> still 9 segments, 5 trailing samples discarded
         x = np.arange(105, dtype=np.float64)
         segs = extract_segments(x, segment_length=20, overlap_samples=10)
         assert segs.shape == (9, 20)
@@ -294,10 +342,6 @@ class TestColouredNoisePSD:
     """Validate broad spectral recovery using an exact analytical AR(1) process."""
 
     def test_ar1_spectral_recovery(self):
-        """AR(1): x_j = phi * x_{j-1} + eps_j.
-
-        Theoretical PSD: S(f) = 2 * sigma_eps^2 * dt / [1 + phi^2 - 2 * phi * cos(2 * pi * f * dt)].
-        """
         phi = 0.6
         sigma_eps = 1.0
         f_s = 2048.0
@@ -308,7 +352,6 @@ class TestColouredNoisePSD:
 
         rng = np.random.default_rng(999)
 
-        # Generate AR(1) realizations and accumulate Welch PSD
         psd_sum = np.zeros(M // 2 + 1, dtype=np.float64)
         for _ in range(n_realizations):
             eps = rng.normal(0.0, sigma_eps, size=n_samples + 200)
@@ -316,31 +359,97 @@ class TestColouredNoisePSD:
             x_full[0] = eps[0] / math.sqrt(1.0 - phi ** 2)
             for j in range(1, len(eps)):
                 x_full[j] = phi * x_full[j - 1] + eps[j]
-            x = x_full[200:]  # Discard transient burn-in
+            x = x_full[200:]
 
             freqs, psd = welch_psd(x, delta_t, segment_length=M, overlap_samples=M // 2, window="tukey")
             psd_sum += psd
 
         psd_measured = psd_sum / n_realizations
 
-        # Exact theoretical one-sided PSD
         denom = 1.0 + phi ** 2 - 2.0 * phi * np.cos(2.0 * np.pi * freqs * delta_t)
         expected_interior = 2.0 * (sigma_eps ** 2) * delta_t / denom
 
-        # Compare across interior band (k = 5 to M/2 - 5)
         rel_diff = np.abs(psd_measured[5:-5] - expected_interior[5:-5]) / expected_interior[5:-5]
-        mean_rel_diff = np.mean(rel_diff)
-
-        # Ensemble mean should agree within 5% across the band
-        assert mean_rel_diff < 0.05
+        assert np.mean(rel_diff) < 0.05
 
 
 # =====================================================================
-# SECTION G: Median Estimator and Outlier Resilience
+# SECTION G: Generalized All-Lags Welch Variance Inflation (Correction C)
+# =====================================================================
+
+class TestWelchVarianceInflation:
+    """Validate all-lags variance inflation formula against analytical benchmarks."""
+
+    def test_zero_overlap_and_single_segment(self):
+        w = tukey_window(256, alpha=0.25)
+        # Zero overlap -> kappa = 1
+        assert welch_variance_inflation(w, 256, overlap_samples=0, n_segments=10) == 1.0
+        # Single segment -> kappa = 1
+        assert welch_variance_inflation(w, 256, overlap_samples=128, n_segments=1) == 1.0
+
+    def test_50_percent_overlap_reproduces_adjacent_only(self):
+        M = 512
+        w = tukey_window(M, alpha=0.25)
+        K = 15
+        overlap = M // 2
+
+        kappa_all = welch_variance_inflation(w, M, overlap_samples=overlap, n_segments=K)
+        rw = window_overlap_correlation(w, overlap_samples=overlap)
+        kappa_expected_adj = 1.0 + 2.0 * ((K - 1) / K) * (rw ** 2)
+
+        assert kappa_all == pytest.approx(kappa_expected_adj, rel=1e-12)
+
+    def test_independent_review_benchmark_75_percent_overlap(self):
+        """Reproduce independent reviewer benchmark: M=256, K=13, 75% overlap.
+
+        Reviewer benchmark:
+        Adjacent-only: approx 2.0130
+        All shared lags: approx 2.3810
+        """
+        M = 256
+        K = 13
+        overlap = 192  # 75%
+        w = tukey_window(M, alpha=0.25)
+
+        kappa_all = welch_variance_inflation(w, M, overlap_samples=overlap, n_segments=K)
+        assert kappa_all == pytest.approx(2.3810, abs=1e-4)
+
+        # Verify adjacent-only gives 2.0130
+        H = M - overlap
+        r1 = window_overlap_correlation(w, overlap_samples=overlap)
+        kappa_adj = 1.0 + 2.0 * ((K - 1) / K) * (r1 ** 2)
+        assert kappa_adj == pytest.approx(2.0130, abs=1e-4)
+
+    def test_high_overlap_multiple_shared_lags(self):
+        """87.5% overlap (H = M/8) gives 7 shared lags."""
+        M = 256
+        w = tukey_window(M, alpha=0.25)
+        overlap = 224  # 7/8 overlap, H = 32
+        H = M - overlap
+        r_lags = window_multi_lag_correlations(w, hop_length=H, max_lag=20)
+        assert r_lags.size == 7
+        assert np.all(r_lags > 0.0)
+        assert np.all(np.diff(r_lags) < 0.0)  # Monotonically decreasing with lag
+
+        kappa = welch_variance_inflation(w, M, overlap_samples=overlap, n_segments=20)
+        assert kappa > 2.5
+
+    def test_segment_count_limits_max_lag(self):
+        """When K - 1 < floor((M-1)/H), ell_max is bounded by K - 1."""
+        M = 256
+        w = tukey_window(M, alpha=0.25)
+        overlap = 224  # H = 32 -> floor(255/32) = 7
+        # But K = 3 -> max_lag = 2
+        r_lags = window_multi_lag_correlations(w, hop_length=32, max_lag=2)
+        assert r_lags.size == 2
+
+
+# =====================================================================
+# SECTION H: Redesigned Median Estimator and Assertion Gating (Correction B)
 # =====================================================================
 
 class TestMedianEstimator:
-    """Validate median bias correction C(K), parity, and transient resilience."""
+    """Validate redesigned median-Welch API, raw median, and assertion gating."""
 
     @pytest.mark.parametrize("K,expected", [
         (1, 1.0),
@@ -354,17 +463,53 @@ class TestMedianEstimator:
         assert ck == pytest.approx(expected, rel=1e-5)
 
     def test_asymptotic_median_convergence(self):
-        """As K -> inf, C(K) -> ln(2) approx 0.693147."""
         ck_large = median_bias_factor(10001)
         assert ck_large == pytest.approx(math.log(2.0), rel=1e-4)
 
-    def test_independent_median_unbiasedness(self):
-        """Verify that median estimator with zero overlap is unbiased for white noise."""
+    def test_raw_median_works_with_zero_and_nonzero_overlap(self):
+        """Raw median must operate without assertion, with zero or nonzero overlap."""
+        x = np.ones(512, dtype=np.float64)
+        delta_t = 1.0 / 1024.0
+
+        # Zero overlap, raw median
+        _, psd_zero = welch_psd(x, delta_t, segment_length=64, overlap_samples=0, method="median", bias_correct=False)
+        assert psd_zero.shape == (33,)
+
+        # Nonzero overlap, raw median
+        _, psd_overlap = welch_psd(x, delta_t, segment_length=64, overlap_samples=32, method="median", bias_correct=False)
+        assert psd_overlap.shape == (33,)
+
+    def test_bias_correction_rejected_without_explicit_assertion(self):
+        """Zero overlap alone must NOT authorize bias correction without caller assertion."""
+        x = np.ones(512, dtype=np.float64)
+        delta_t = 1.0 / 1024.0
+
+        with pytest.raises(ValueError, match="requires the caller to explicitly assert"):
+            welch_psd(
+                x, delta_t, segment_length=64, overlap_samples=0,
+                method="median", bias_correct=True,
+                assume_independent_exponential_periodograms=False,
+            )
+
+    def test_bias_correction_rejected_with_nonzero_overlap(self):
+        """Nonzero overlap must be rejected for bias correction, even with assertion."""
+        x = np.ones(512, dtype=np.float64)
+        delta_t = 1.0 / 1024.0
+
+        with pytest.raises(ValueError, match="rejected for overlapping segments"):
+            welch_psd(
+                x, delta_t, segment_length=64, overlap_samples=32,
+                method="median", bias_correct=True,
+                assume_independent_exponential_periodograms=True,
+            )
+
+    def test_bias_correction_allowed_with_zero_overlap_and_assertion(self):
+        """Bias correction is accepted ONLY with zero overlap AND explicit caller assertion."""
         f_s = 2048.0
         delta_t = 1.0 / f_s
         M = 128
         sigma = 2.0
-        K = 31  # Odd number of segments
+        K = 31
         n_samples = K * M
         n_realizations = 250
 
@@ -375,20 +520,20 @@ class TestMedianEstimator:
 
         for _ in range(n_realizations):
             x = rng.normal(0.0, sigma, size=n_samples)
-            # Zero overlap -> independent periodograms
             _, psd = welch_psd(
                 x, delta_t, segment_length=M, overlap_samples=0,
-                window="tukey", method="median"
+                window="tukey", method="median",
+                bias_correct=True,
+                assume_independent_exponential_periodograms=True,
             )
             psd_sum += psd
 
         psd_mean = psd_sum / n_realizations
         measured_interior = np.mean(psd_mean[5:-5])
-
         assert measured_interior == pytest.approx(expected_interior, rel=0.04)
 
     def test_outlier_glitch_resilience(self):
-        """Inject a high-amplitude transient into 1 of 15 segments and compare mean vs median."""
+        """Transient glitch resilience works with uncorrected raw median or corrected median."""
         f_s = 2048.0
         delta_t = 1.0 / f_s
         M = 256
@@ -404,34 +549,21 @@ class TestMedianEstimator:
         x[glitch_idx] += 200.0 * sigma
 
         _, psd_mean = welch_psd(x, delta_t, segment_length=M, overlap_samples=0, method="mean")
-        _, psd_med = welch_psd(x, delta_t, segment_length=M, overlap_samples=0, method="median")
+        _, psd_med_raw = welch_psd(x, delta_t, segment_length=M, overlap_samples=0, method="median", bias_correct=False)
 
         expected_interior = expected_white_noise_psd(sigma, delta_t, bin_type="interior")
 
         # Mean estimator should be heavily corrupted (> 5x higher)
         assert np.mean(psd_mean[5:-5]) > 5.0 * expected_interior
 
-        # Median estimator should remain uncorrupted (within 25% of baseline for a single realization)
-        assert np.mean(psd_med[5:-5]) == pytest.approx(expected_interior, rel=0.25)
-
-    def test_overlapping_median_requires_explicit_opt_in(self):
-        x = np.zeros(512, dtype=np.float64)
-        delta_t = 1.0 / 1024.0
-
-        # Should raise ValueError when overlap > 0 and allow_correlated_median=False
-        with pytest.raises(ValueError, match="Exact finite-sample median bias correction"):
-            welch_psd(x, delta_t, segment_length=128, overlap_samples=64, method="median")
-
-        # Should succeed when allow_correlated_median=True
-        freqs, psd = welch_psd(
-            x, delta_t, segment_length=128, overlap_samples=64,
-            method="median", allow_correlated_median=True
-        )
-        assert len(psd) == 65
+        # Raw median estimator remains immune to the outlier, scaled by C(15) approx 0.725
+        ck = median_bias_factor(K)
+        expected_raw_median = ck * expected_interior
+        assert np.mean(psd_med_raw[5:-5]) == pytest.approx(expected_raw_median, rel=0.25)
 
 
 # =====================================================================
-# SECTION H: Input Validation and Edge Cases
+# SECTION I: Input Validation and Edge Cases
 # =====================================================================
 
 class TestInputValidation:
@@ -473,6 +605,16 @@ class TestInputValidation:
         with pytest.raises(ValueError, match="method must be either 'mean' or 'median'"):
             welch_psd(x, delta_t=1.0, segment_length=64, method="maximum")  # type: ignore
 
+    def test_reject_invalid_method_parameter_combinations(self):
+        x = np.zeros(256)
+        # Passing bias_correct to method="mean"
+        with pytest.raises(ValueError, match="bias_correct and assume_independent_exponential_periodograms are only applicable when method='median'"):
+            welch_psd(x, delta_t=1.0, segment_length=64, method="mean", bias_correct=True)
+
+        # Setting assertion to True when bias_correct is False
+        with pytest.raises(ValueError, match="assume_independent_exponential_periodograms was set to True, but bias_correct is False"):
+            welch_psd(x, delta_t=1.0, segment_length=64, method="median", bias_correct=False, assume_independent_exponential_periodograms=True)
+
     def test_reject_invalid_window_type_and_size(self):
         x = np.zeros(256)
         with pytest.raises(ValueError, match="Unknown window string 'hamming'"):
@@ -484,34 +626,33 @@ class TestInputValidation:
 
 
 # =====================================================================
-# SECTION I: Validation Script Integration Tests
+# SECTION J: Validation Script Integration Tests
 # =====================================================================
 
 class TestValidationScriptIntegration:
-    """Verify that validation script functions execute and return valid metrics."""
+    """Verify that validation script functions execute and return valid calibrated metrics."""
 
     def test_white_noise_validation_smoke(self):
         from scripts.validate_welch_psd import validate_white_noise_welch
         res = validate_white_noise_welch(
             f_s=2048.0, total_duration=2.0, segment_duration=0.5,
-            overlap_fraction=0.5, sigma=1.0, n_realizations=10, seed=123
+            overlap_fraction=0.5, sigma=1.0, n_realizations=20, seed=123
         )
-        assert res["rel_err_interior"] < 0.25
+        assert abs(res["z_interior"]) < 5.0
         assert res["mean_parseval_rel_diff"] < 1e-12
 
     def test_median_validation_smoke(self):
         from scripts.validate_welch_psd import validate_median_white_noise
         res = validate_median_white_noise(
             f_s=2048.0, segment_duration=0.25, n_segments=5,
-            sigma=1.0, n_realizations=10, seed=123
+            sigma=1.0, n_realizations=20, seed=123
         )
-        assert res["rel_err_corr"] < 0.35
+        assert abs(res["z_median"]) < 5.0
 
     def test_coloured_noise_validation_smoke(self):
         from scripts.validate_welch_psd import validate_coloured_noise_ar1
         res = validate_coloured_noise_ar1(
             phi=0.5, sigma_eps=1.0, f_s=1024.0, total_duration=2.0,
-            segment_duration=0.5, n_realizations=10, seed=123
+            segment_duration=0.5, n_realizations=20, seed=123
         )
         assert res["mean_rel_err"] < 0.25
-
