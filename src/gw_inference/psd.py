@@ -10,10 +10,12 @@ Key Capabilities:
 2. Window power (S_2) and coherent gain (S_1) normalization factors.
 3. Generalized multi-lag window overlap correlations (r_ell) and all-lags
    Welch variance inflation factor (kappa_overlap) under proper-complex Gaussian noise.
-4. Segment extraction with arbitrary valid overlap and strict non-truncated slicing.
-5. Single-segment windowed one-sided periodogram calculation.
-6. Standard Welch mean PSD estimator with configurable window and overlap.
-7. Finite-sample bias-corrected Welch median PSD estimator with odd/even parity
+4. Exact discrete covariance and pseudo-covariance sums (P_11, P_12, C_11, C_12)
+   and full Isserlis/Wick periodogram correlation evaluations.
+5. Segment extraction with arbitrary valid overlap and strict non-truncated slicing.
+6. Single-segment windowed one-sided periodogram calculation.
+7. Standard Welch mean PSD estimator with configurable window and overlap.
+8. Finite-sample bias-corrected Welch median PSD estimator with odd/even parity
    formulas and strict caller assertion of independent exponential variates.
 
 Mathematical Conventions:
@@ -375,6 +377,112 @@ def welch_variance_inflation(
     lags = np.arange(1, r_lags.size + 1, dtype=np.float64)
     inflation = 1.0 + 2.0 * np.sum((1.0 - lags / K) * (r_lags ** 2))
     return float(inflation)
+
+
+def discrete_pseudo_covariance_ratios(
+    window: np.ndarray,
+    overlap_samples: Optional[int] = None,
+) -> Dict[str, Union[float, np.ndarray]]:
+    r"""Compute exact discrete covariance and pseudo-covariance sums for a windowed DFT.
+
+    Under stationary discrete Gaussian white noise with variance sigma^2:
+        C_{11} = \sigma^2 \sum_{j=0}^{M-1} w_j^2 = \sigma^2 M S_2
+        C_{12}(k) = \sigma^2 e^{-2\pi i H k / M} \sum_{l=0}^{M - H - 1} w_l w_{l+H}
+        P_{11}(k) = \sigma^2 \sum_{j=0}^{M-1} w_j^2 e^{-4\pi i j k / M}
+        P_{12}(k) = \sigma^2 e^{-2\pi i H k / M} \sum_{l=0}^{M - H - 1} w_l w_{l+H} e^{-4\pi i l k / M}
+
+    The complete Isserlis/Wick periodogram correlation across segments is:
+        \rho_P(k) = \frac{|C_{12}(k)|^2 + |P_{12}(k)|^2}{C_{11}^2 + |P_{11}(k)|^2}
+    whereas the proper-complex approximation assumes P_{11}(k) \approx 0 and P_{12}(k) \approx 0:
+        \rho_P^{\mathrm{approx}} = \frac{|C_{12}|^2}{C_{11}^2} = r_w^2
+
+    Parameters
+    ----------
+    window : np.ndarray
+        1D real-valued discrete window of length M.
+    overlap_samples : int, optional
+        Number of overlapping samples between adjacent segments.
+        Defaults to M // 2 (50% overlap).
+
+    Returns
+    -------
+    dict
+        Dictionary containing:
+        - "C11": Total window energy sum \sum w_j^2 (float)
+        - "C12": Window overlap product sum \sum w_l w_{l+H} (float)
+        - "rw_squared": Proper-complex approximation (C12 / C11)^2 (float)
+        - "P11": 1D complex128 array of shape (M // 2 + 1,)
+        - "P12": 1D complex128 array of shape (M // 2 + 1,)
+        - "ratio_P11": 1D float64 array of |P11(k)| / C11
+        - "ratio_P12": 1D float64 array of |P12(k)| / |C12| (0.0 if C12 == 0)
+        - "rho_full": 1D float64 array of exact periodogram correlation \rho_P(k)
+        - "rel_diff": 1D float64 array of (\rho_full(k) - rw_squared) / rw_squared
+    """
+    w = _validate_window_array(window)
+    M = w.size
+
+    if overlap_samples is None:
+        overlap = M // 2
+    else:
+        if not isinstance(overlap_samples, (int, np.integer)):
+            raise ValueError(f"overlap_samples must be an integer, got {overlap_samples}")
+        overlap = int(overlap_samples)
+        if overlap < 0 or overlap >= M:
+            raise ValueError(f"overlap_samples must satisfy 0 <= overlap < M ({M}), got {overlap}")
+
+    H = M - overlap
+    C11 = float(np.sum(w ** 2))
+    if C11 == 0.0:
+        raise ValueError("Window has zero total energy sum")
+
+    n_freqs = M // 2 + 1
+    k = np.arange(n_freqs, dtype=np.float64)
+
+    # P11(k) = sum_{j=0}^{M-1} w_j^2 e^{-4pi i j k / M}
+    # Length-M FFT of w^2 at index (2k) % M
+    w2 = w ** 2
+    w2_fft = np.fft.fft(w2)
+    idx_2k = (2 * np.arange(n_freqs)) % M
+    P11 = w2_fft[idx_2k]
+
+    # C12 and P12
+    if overlap > 0:
+        w_overlap = w[:overlap] * w[H:]
+        C12 = float(np.sum(w_overlap))
+        phase_prefactor = np.exp(-2j * np.pi * H * k / float(M))
+        if overlap == M // 2:
+            ov_fft = np.fft.fft(w_overlap)
+            idx_k_ov = np.arange(n_freqs) % overlap
+            P12 = phase_prefactor * ov_fft[idx_k_ov]
+        else:
+            l_arr = np.arange(overlap, dtype=np.float64)
+            phase_mat = np.exp(-4j * np.pi * np.outer(l_arr, k) / float(M))
+            P12 = phase_prefactor * (w_overlap @ phase_mat)
+    else:
+        C12 = 0.0
+        P12 = np.zeros(n_freqs, dtype=np.complex128)
+
+    ratio_P11 = np.abs(P11) / C11
+    ratio_P12 = np.abs(P12) / abs(C12) if abs(C12) > 0.0 else np.zeros(n_freqs, dtype=np.float64)
+
+    rw_squared = (C12 / C11) ** 2 if C11 > 0 else 0.0
+    num = (C12 ** 2) + (np.abs(P12) ** 2)
+    denom = (C11 ** 2) + (np.abs(P11) ** 2)
+    rho_full = num / denom
+
+    rel_diff = (rho_full - rw_squared) / rw_squared if rw_squared > 0.0 else np.zeros(n_freqs, dtype=np.float64)
+
+    return {
+        "C11": C11,
+        "C12": C12,
+        "rw_squared": rw_squared,
+        "P11": P11,
+        "P12": P12,
+        "ratio_P11": ratio_P11,
+        "ratio_P12": ratio_P12,
+        "rho_full": rho_full,
+        "rel_diff": rel_diff,
+    }
 
 
 def extract_segments(

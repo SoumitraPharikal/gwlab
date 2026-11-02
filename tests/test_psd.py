@@ -27,6 +27,7 @@ from gw_inference.conventions import (
 )
 from gw_inference.noise import generate_white_noise
 from gw_inference.psd import (
+    discrete_pseudo_covariance_ratios,
     extract_segments,
     median_bias_factor,
     single_segment_psd,
@@ -445,7 +446,57 @@ class TestWelchVarianceInflation:
 
 
 # =====================================================================
-# SECTION H: Redesigned Median Estimator and Assertion Gating (Correction B)
+# SECTION H: Exact Discrete Pseudo-Covariance Window Sums (Correction 3)
+# =====================================================================
+
+class TestPseudoCovariance:
+    """Validate discrete pseudo-covariance sums and proper-complex approximation limits."""
+
+    def test_rectangular_window_has_zero_interior_pseudo_covariance(self):
+        """Under rectangular window, P_11(k) is identically zero for all 0 < k < M/2."""
+        M = 256
+        w = np.ones(M, dtype=np.float64)
+        res = discrete_pseudo_covariance_ratios(w, overlap_samples=128)
+        interior_P11 = res["P11"][1:-1]
+        np.testing.assert_allclose(np.abs(interior_P11), 0.0, atol=1e-10)
+
+    def test_dc_and_nyquist_endpoints_have_unit_ratio(self):
+        """At DC (k=0) and Nyquist (k=M/2), pseudo-covariance equals covariance exactly."""
+        M = 256
+        w = tukey_window(M, alpha=0.25)
+        res = discrete_pseudo_covariance_ratios(w, overlap_samples=128)
+        # k=0 (DC)
+        assert res["ratio_P11"][0] == pytest.approx(1.0, rel=1e-12)
+        assert res["ratio_P12"][0] == pytest.approx(1.0, rel=1e-12)
+        assert res["rho_full"][0] == pytest.approx(res["rw_squared"], rel=1e-12)
+        # k=M/2 (Nyquist)
+        assert res["ratio_P11"][-1] == pytest.approx(1.0, rel=1e-12)
+        assert res["ratio_P12"][-1] == pytest.approx(1.0, rel=1e-12)
+        assert res["rho_full"][-1] == pytest.approx(res["rw_squared"], rel=1e-12)
+
+    def test_tukey_window_analysis_band_suppression(self):
+        """For Tukey window (alpha=0.25), pseudo-covariance is suppressed in the analysis band."""
+        M = 4096
+        w = tukey_window(M, alpha=0.25)
+        res = discrete_pseudo_covariance_ratios(w, overlap_samples=2048)
+        interior_slice = slice(5, (M // 2 + 1) - 5)
+        max_ratio_P11 = np.max(res["ratio_P11"][interior_slice])
+        max_rel_diff = np.max(np.abs(res["rel_diff"][interior_slice]))
+        assert max_ratio_P11 < 0.02
+        assert max_rel_diff < 1e-4
+
+    def test_transition_bins_nonzero_pseudo_covariance(self):
+        """Transition bin k=1 has non-zero pseudo-covariance departing from r_w^2."""
+        M = 4096
+        w = tukey_window(M, alpha=0.25)
+        res = discrete_pseudo_covariance_ratios(w, overlap_samples=2048)
+        assert res["ratio_P11"][1] == pytest.approx(0.1509, abs=1e-3)
+        assert res["ratio_P12"][1] == pytest.approx(0.2829, abs=1e-3)
+        assert res["rel_diff"][1] > 0.05  # +5.6% deviation
+
+
+# =====================================================================
+# SECTION I: Redesigned Median Estimator and Assertion Gating (Correction B)
 # =====================================================================
 
 class TestMedianEstimator:
@@ -561,6 +612,36 @@ class TestMedianEstimator:
         expected_raw_median = ck * expected_interior
         assert np.mean(psd_med_raw[5:-5]) == pytest.approx(expected_raw_median, rel=0.25)
 
+    def test_exact_rectangular_white_noise_median(self):
+        """Exact theoretical baseline: rectangular window white-noise median satisfies C(K)."""
+        f_s = 2048.0
+        delta_t = 1.0 / f_s
+        M = 128
+        sigma = 1.0
+        K = 15
+        n_samples = K * M
+        n_realizations = 200
+
+        expected_interior = expected_white_noise_psd(sigma, delta_t, bin_type="interior")
+
+        rng = np.random.default_rng(999)
+        corr_means = np.empty(n_realizations, dtype=np.float64)
+
+        for r in range(n_realizations):
+            x = rng.normal(0.0, sigma, size=n_samples)
+            _, psd_corr = welch_psd(
+                x, delta_t, segment_length=M, overlap_samples=0,
+                window="rect", method="median",
+                bias_correct=True,
+                assume_independent_exponential_periodograms=True,
+            )
+            corr_means[r] = np.mean(psd_corr[5:-5])
+
+        ensemble_mean = float(np.mean(corr_means))
+        se = float(np.std(corr_means, ddof=1) / math.sqrt(n_realizations))
+        z = (ensemble_mean - expected_interior) / se
+        assert abs(z) < 5.0
+
 
 # =====================================================================
 # SECTION I: Input Validation and Edge Cases
@@ -636,14 +717,30 @@ class TestValidationScriptIntegration:
         from scripts.validate_welch_psd import validate_white_noise_welch
         res = validate_white_noise_welch(
             f_s=2048.0, total_duration=2.0, segment_duration=0.5,
-            overlap_fraction=0.5, sigma=1.0, n_realizations=20, seed=123
+            overlap_fraction=0.5, sigma=1.0, n_realizations=20, seed=123,
+            n_bootstrap=50,
         )
         assert abs(res["z_interior"]) < 5.0
+        assert abs(res["z_rho_p"]) < 5.0
         assert res["mean_parseval_rel_diff"] < 1e-12
 
-    def test_median_validation_smoke(self):
-        from scripts.validate_welch_psd import validate_median_white_noise
-        res = validate_median_white_noise(
+    def test_pseudo_covariance_validation_smoke(self):
+        from scripts.validate_welch_psd import validate_pseudo_covariance_sums
+        res = validate_pseudo_covariance_sums(segment_length=256, alpha=0.25, overlap_fraction=0.5)
+        assert res["ratio_P11_dc"] == pytest.approx(1.0, rel=1e-12)
+        assert res["max_rel_diff_interior"] < 1e-3
+
+    def test_median_rectangular_validation_smoke(self):
+        from scripts.validate_welch_psd import validate_median_white_noise_rectangular
+        res = validate_median_white_noise_rectangular(
+            f_s=2048.0, segment_duration=0.25, n_segments=5,
+            sigma=1.0, n_realizations=20, seed=123
+        )
+        assert abs(res["z_median"]) < 5.0
+
+    def test_median_tukey_validation_smoke(self):
+        from scripts.validate_welch_psd import validate_median_white_noise_tukey
+        res = validate_median_white_noise_tukey(
             f_s=2048.0, segment_duration=0.25, n_segments=5,
             sigma=1.0, n_realizations=20, seed=123
         )

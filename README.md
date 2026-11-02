@@ -29,10 +29,11 @@ The project is executed in strictly supervised stages, with formal independent s
 - [x] Configurable segment extraction with non-truncated slicing, trailing data safety, and hop length $H = M - N_{\mathrm{overlap}}$.
 - [x] Single-segment windowed one-sided periodogram calculation matching Stage 1.1 when unwindowed ($w_j \equiv 1, S_2 = 1$).
 - [x] Standard Welch arithmetic mean PSD estimator with generalized all-lags variance inflation factor $\kappa_{\mathrm{overlap}} = 1 + 2 \sum_{\ell=1}^{\ell_{\max}} (1 - \ell/K) r_\ell^2$.
+- [x] Exact discrete pseudo-covariance sums evaluation (`discrete_pseudo_covariance_ratios`) quantifying proper-complex limits and full Isserlis/Wick periodogram correlation.
 - [x] Raw sample median Welch PSD estimation available across arbitrary overlap configurations.
 - [x] Finite-sample bias-corrected Welch median PSD estimator ($C(K)$ for odd/even $K$) gated behind explicit caller assertion of independent exponential periodograms (`assume_independent_exponential_periodograms=True`) and strictly rejected for overlapping segments.
-- [x] Automated test suite (147 tests total: 99 Stage 1.1 tests + 48 Stage 1.2 tests, 100% passing).
-- [x] Statistically calibrated numerical validation script (`scripts/validate_welch_psd.py`) using realization-level band statistics, standardized $z$-score deviations, bootstrap correlation uncertainty, and diagnostic coloured-noise AR(1) comparison.
+- [x] Automated test suite (154 tests total: 99 Stage 1.1 tests + 55 Stage 1.2 tests, 100% passing).
+- [x] Statistically calibrated numerical validation script (`scripts/validate_welch_psd.py`) using realization-level band statistics, paired bootstrap correlation uncertainty ($B=1000$), exact rectangular median baseline, and diagnostic coloured-noise AR(1) comparison.
 - [x] Technical implementation report (`reports/Stage_1_2_Implementation_Report.md`).
 
 ### Strict Execution Boundary
@@ -89,7 +90,7 @@ GW-matched-filtering-and-baysian-interference/
 ├── tests/
 │   ├── test_conventions.py                         <- 86 unit tests for Fourier conventions & Parseval
 │   ├── test_noise.py                               <- 13 unit tests for noise generator & statistics
-│   └── test_psd.py                                 <- 48 unit tests for Welch PSD, Tukey, and median
+│   └── test_psd.py                                 <- 55 unit tests for Welch PSD, Tukey, and median
 │
 ├── scripts/
 │   ├── validate_white_noise_psd.py                 <- 1000-realization Monte Carlo validation script

@@ -4,18 +4,25 @@
 Performs rigorous Monte Carlo and theoretical validation of:
 1. One-sided Welch mean PSD estimation under discrete Gaussian white noise,
    using realization-level band statistics and standardized z-score deviations.
-2. Generalized all-lags overlap variance inflation factor kappa_overlap (Correction C).
-3. Realization-level uncertainty calibration for DC and Nyquist endpoints.
-4. Statistically calibrated adjacent-segment correlation vs proper-complex prediction r_1^2.
+2. Statistically calibrated adjacent-segment correlation vs proper-complex prediction r_1^2
+   using a paired bootstrap (B=1000) across independent Monte Carlo realizations (Correction 1).
+   The bootstrap estimates sampling uncertainty of the correlation statistic across independent
+   realizations; it does not establish that the theoretical correlation model is universally valid.
+3. Direct numerical evaluation of exact discrete pseudo-covariance window sums P_11(k), P_12(k)
+   and full Isserlis/Wick periodogram correlation across the analysis band (Correction 3).
+4. Finite-sample bias-corrected Welch median PSD estimation:
+   - Part 3A: Exact theoretical baseline experiment using rectangular window on independent
+     Gaussian white-noise segments, where Fourier coefficients are strictly proper and periodograms
+     follow exact independent exponential distributions (Correction 2A).
+   - Part 3B: Numerical robustness diagnostic using Tukey window, quantifying the effect of
+     small non-zero window pseudo-covariance on finite-sample median estimation (Correction 2B).
 5. Windowed discrete Parseval energy conservation to machine precision.
-6. Finite-sample bias-corrected Welch median PSD validation under strictly independent
-   Gaussian white-noise segments with explicit caller assertion (Correction B).
-7. Coloured-noise AR(1) spectral shape diagnostic comparison.
+6. Diagnostic broad spectral recovery of an AR(1) coloured noise process.
 
 Usage:
 ------
 python scripts/validate_welch_psd.py
-python scripts/validate_welch_psd.py --n-realizations 500 --seed 42
+python scripts/validate_welch_psd.py --n-realizations 300 --seed 42
 """
 
 from __future__ import annotations
@@ -23,7 +30,7 @@ from __future__ import annotations
 import argparse
 import math
 import sys
-from typing import Dict
+from typing import Dict, Optional, Union
 
 import numpy as np
 
@@ -34,6 +41,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 from gw_inference.conventions import expected_white_noise_psd
 from gw_inference.noise import generate_white_noise
 from gw_inference.psd import (
+    discrete_pseudo_covariance_ratios,
     extract_segments,
     median_bias_factor,
     single_segment_psd,
@@ -56,10 +64,10 @@ def validate_white_noise_welch(
     n_realizations: int = 300,
     seed: int = 42,
     alpha: float = 0.25,
+    n_bootstrap: int = 1000,
 ) -> Dict[str, float]:
     """Run statistically calibrated Monte Carlo validation of Welch mean PSD on Gaussian white noise."""
     delta_t = 1.0 / f_s
-    n_samples = int(round(total_duration * f_s))
     segment_length = int(round(segment_duration * f_s))
     overlap_samples = int(round(overlap_fraction * segment_length))
     hop_length = segment_length - overlap_samples
@@ -68,9 +76,10 @@ def validate_white_noise_welch(
     s2 = window_power(w)
     s1 = window_coherent_gain(w)
     r1 = window_overlap_correlation(w, overlap_samples=overlap_samples)
+    n_samples = int(round(total_duration * f_s))
     n_segments = (n_samples - overlap_samples) // hop_length
 
-    # All-lags variance inflation factor (Correction C)
+    # All-lags variance inflation factor
     var_inflation = welch_variance_inflation(
         w, segment_length=segment_length,
         overlap_samples=overlap_samples, n_segments=n_segments
@@ -84,10 +93,10 @@ def validate_white_noise_welch(
     expected_dc = expected_white_noise_psd(sigma, delta_t, bin_type="dc")
     expected_nyquist = expected_white_noise_psd(sigma, delta_t, bin_type="nyquist")
 
-    # Theoretical single-bin standard error (for a single frequency bin across R realizations)
+    # Theoretical single-bin standard error
     se_single_bin = (expected_interior / math.sqrt(n_realizations * n_segments)) * math.sqrt(var_inflation)
 
-    # Accumulate realization-level statistics (Correction D)
+    # Accumulate realization-level statistics
     rng = np.random.default_rng(seed)
     n_freqs = segment_length // 2 + 1
     interior_slice = slice(10, n_freqs - 10)
@@ -146,7 +155,7 @@ def validate_white_noise_welch(
     se_nyq_bar = float(s_nyq / math.sqrt(n_realizations))
     z_nyquist = float((nyq_bar - expected_nyquist) / se_nyq_bar) if se_nyq_bar > 0 else 0.0
 
-    # Adjacent segment correlation and bootstrap standard error
+    # Adjacent segment correlation and paired bootstrap standard error (Correction 1)
     measured_rho_p = 0.0
     se_rho_p = 0.0
     z_rho_p = 0.0
@@ -167,15 +176,13 @@ def validate_white_noise_welch(
 
         measured_rho_p = _calc_mean_r(x_bins, y_bins)
 
-        # Bootstrap 100 resamples across realizations to estimate sampling uncertainty
+        # Paired bootstrap across realizations to estimate sampling uncertainty
         boot_rng = np.random.default_rng(seed + 999)
-        boot_rhos = [
-            _calc_mean_r(
-                x_bins[boot_rng.choice(n_realizations, size=n_realizations, replace=True)],
-                y_bins[boot_rng.choice(n_realizations, size=n_realizations, replace=True)],
-            )
-            for _ in range(100)
-        ]
+        boot_rhos = np.empty(n_bootstrap, dtype=np.float64)
+        for b in range(n_bootstrap):
+            idx = boot_rng.choice(n_realizations, size=n_realizations, replace=True)
+            boot_rhos[b] = _calc_mean_r(x_bins[idx], y_bins[idx])
+
         se_rho_p = float(np.std(boot_rhos, ddof=1))
         z_rho_p = float((measured_rho_p - r1_squared) / se_rho_p) if se_rho_p > 0 else 0.0
 
@@ -198,6 +205,7 @@ def validate_white_noise_welch(
         "n_shared_lags": len(r_lags),
         "var_inflation": var_inflation,
         "n_realizations": n_realizations,
+        "n_bootstrap": n_bootstrap,
         "expected_interior": expected_interior,
         "q_bar": q_bar,
         "s_q": s_q,
@@ -219,7 +227,50 @@ def validate_white_noise_welch(
     }
 
 
-def validate_median_white_noise(
+def validate_pseudo_covariance_sums(
+    segment_length: int = 4096,
+    alpha: float = 0.25,
+    overlap_fraction: float = 0.5,
+) -> Dict[str, float]:
+    """Direct numerical evaluation of discrete window covariance and pseudo-covariance sums (Correction 3)."""
+    overlap_samples = int(round(overlap_fraction * segment_length))
+    w = tukey_window(segment_length, alpha=alpha)
+    res = discrete_pseudo_covariance_ratios(w, overlap_samples=overlap_samples)
+    n_freqs = segment_length // 2 + 1
+    interior_slice = slice(5, n_freqs - 5)
+
+    return {
+        "C11": float(res["C11"]),
+        "C12": float(res["C12"]),
+        "rw_squared": float(res["rw_squared"]),
+        "ratio_P11_dc": float(res["ratio_P11"][0]),
+        "ratio_P12_dc": float(res["ratio_P12"][0]),
+        "rho_full_dc": float(res["rho_full"][0]),
+        "ratio_P11_k1": float(res["ratio_P11"][1]),
+        "ratio_P12_k1": float(res["ratio_P12"][1]),
+        "rho_full_k1": float(res["rho_full"][1]),
+        "rel_diff_k1": float(res["rel_diff"][1]),
+        "ratio_P11_k2": float(res["ratio_P11"][2]),
+        "ratio_P12_k2": float(res["ratio_P12"][2]),
+        "rho_full_k2": float(res["rho_full"][2]),
+        "rel_diff_k2": float(res["rel_diff"][2]),
+        "ratio_P11_k5": float(res["ratio_P11"][5]),
+        "ratio_P12_k5": float(res["ratio_P12"][5]),
+        "rho_full_k5": float(res["rho_full"][5]),
+        "rel_diff_k5": float(res["rel_diff"][5]),
+        "ratio_P11_nyq": float(res["ratio_P11"][-1]),
+        "ratio_P12_nyq": float(res["ratio_P12"][-1]),
+        "rho_full_nyq": float(res["rho_full"][-1]),
+        "max_ratio_P11_interior": float(np.max(res["ratio_P11"][interior_slice])),
+        "mean_ratio_P11_interior": float(np.mean(res["ratio_P11"][interior_slice])),
+        "max_ratio_P12_interior": float(np.max(res["ratio_P12"][interior_slice])),
+        "mean_ratio_P12_interior": float(np.mean(res["ratio_P12"][interior_slice])),
+        "max_rel_diff_interior": float(np.max(np.abs(res["rel_diff"][interior_slice]))),
+        "mean_rel_diff_interior": float(np.mean(np.abs(res["rel_diff"][interior_slice]))),
+    }
+
+
+def validate_median_white_noise_rectangular(
     f_s: float = 4096.0,
     segment_duration: float = 0.5,
     n_segments: int = 15,
@@ -227,7 +278,13 @@ def validate_median_white_noise(
     n_realizations: int = 300,
     seed: int = 142,
 ) -> Dict[str, float]:
-    """Validate finite-sample bias-corrected Welch median PSD under strictly independent white noise."""
+    """Exact theoretical baseline: validate median-Welch on rectangular-window independent white noise (Correction 2A).
+
+    Under discrete Gaussian white noise and a rectangular window (w_j = 1), Fourier coefficients
+    at interior frequencies are strictly proper complex Gaussian random variables (E[X_k^2] = 0).
+    Therefore, the segment periodograms are identically, independently exponentially distributed,
+    providing an exact test of the finite-sample median bias correction factor C(K).
+    """
     delta_t = 1.0 / f_s
     segment_length = int(round(segment_duration * f_s))
     total_samples = n_segments * segment_length
@@ -242,12 +299,79 @@ def validate_median_white_noise(
     raw_realizations = np.empty(n_realizations, dtype=np.float64)
     corr_realizations = np.empty(n_realizations, dtype=np.float64)
 
-    w = tukey_window(segment_length, alpha=0.25)
+    for r in range(n_realizations):
+        x = generate_white_noise(total_samples, sigma=sigma, generator=rng)
+
+        # Raw median (uncorrected)
+        _, psd_raw = welch_psd(
+            x, delta_t, segment_length=segment_length,
+            overlap_samples=0, window="rect", method="median",
+            bias_correct=False,
+        )
+        raw_realizations[r] = np.mean(psd_raw[interior_slice])
+
+        # Corrected median
+        _, psd_corr = welch_psd(
+            x, delta_t, segment_length=segment_length,
+            overlap_samples=0, window="rect", method="median",
+            bias_correct=True,
+            assume_independent_exponential_periodograms=True,
+        )
+        corr_realizations[r] = np.mean(psd_corr[interior_slice])
+
+    raw_bar = float(np.mean(raw_realizations))
+    corr_bar = float(np.mean(corr_realizations))
+    s_corr = float(np.std(corr_realizations, ddof=1))
+    se_corr_bar = float(s_corr / math.sqrt(n_realizations))
+    z_median = float((corr_bar - expected_interior) / se_corr_bar) if se_corr_bar > 0 else 0.0
+
+    return {
+        "n_segments": n_segments,
+        "ck": ck,
+        "expected_interior": expected_interior,
+        "expected_raw": ck * expected_interior,
+        "raw_bar": raw_bar,
+        "corr_bar": corr_bar,
+        "se_corr_bar": se_corr_bar,
+        "z_median": z_median,
+    }
+
+
+def validate_median_white_noise_tukey(
+    f_s: float = 4096.0,
+    segment_duration: float = 0.5,
+    n_segments: int = 15,
+    sigma: float = 1.0,
+    n_realizations: int = 300,
+    seed: int = 142,
+    alpha: float = 0.25,
+) -> Dict[str, float]:
+    """Numerical robustness diagnostic: evaluate median-Welch on Tukey-window independent white noise (Correction 2B).
+
+    Tapered windows introduce slight non-zero pseudo-covariance P_11(k) != 0, so periodograms are
+    only approximately exponential. This experiment evaluates the empirical accuracy of C(K)
+    under this mild departure from the theoretical assumptions.
+    """
+    delta_t = 1.0 / f_s
+    segment_length = int(round(segment_duration * f_s))
+    total_samples = n_segments * segment_length
+
+    expected_interior = expected_white_noise_psd(sigma, delta_t, bin_type="interior")
+    ck = median_bias_factor(n_segments)
+
+    rng = np.random.default_rng(seed)
+    n_freqs = segment_length // 2 + 1
+    interior_slice = slice(5, n_freqs - 5)
+
+    raw_realizations = np.empty(n_realizations, dtype=np.float64)
+    corr_realizations = np.empty(n_realizations, dtype=np.float64)
+
+    w = tukey_window(segment_length, alpha=alpha)
 
     for r in range(n_realizations):
         x = generate_white_noise(total_samples, sigma=sigma, generator=rng)
 
-        # Raw median (uncorrected, no assertion required)
+        # Raw median (uncorrected)
         _, psd_raw = welch_psd(
             x, delta_t, segment_length=segment_length,
             overlap_samples=0, window=w, method="median",
@@ -255,7 +379,7 @@ def validate_median_white_noise(
         )
         raw_realizations[r] = np.mean(psd_raw[interior_slice])
 
-        # Corrected median (with explicit independent exponential assertion)
+        # Corrected median
         _, psd_corr = welch_psd(
             x, delta_t, segment_length=segment_length,
             overlap_samples=0, window=w, method="median",
@@ -280,6 +404,27 @@ def validate_median_white_noise(
         "se_corr_bar": se_corr_bar,
         "z_median": z_median,
     }
+
+
+def validate_median_white_noise(
+    f_s: float = 4096.0,
+    segment_duration: float = 0.5,
+    n_segments: int = 15,
+    sigma: float = 1.0,
+    n_realizations: int = 300,
+    seed: int = 142,
+    window: str = "rect",
+) -> Dict[str, float]:
+    """Backward-compatible entry point for median-Welch validation."""
+    if window == "rect":
+        return validate_median_white_noise_rectangular(
+            f_s=f_s, segment_duration=segment_duration, n_segments=n_segments,
+            sigma=sigma, n_realizations=n_realizations, seed=seed,
+        )
+    return validate_median_white_noise_tukey(
+        f_s=f_s, segment_duration=segment_duration, n_segments=n_segments,
+        sigma=sigma, n_realizations=n_realizations, seed=seed,
+    )
 
 
 def validate_coloured_noise_ar1(
@@ -345,6 +490,7 @@ def main() -> int:
     parser.add_argument("--overlap", type=float, default=0.5, help="Overlap fraction")
     parser.add_argument("--sigma", type=float, default=1.0, help="White noise standard deviation")
     parser.add_argument("--n-realizations", type=int, default=300, help="Number of Monte Carlo realizations")
+    parser.add_argument("--n-bootstrap", type=int, default=1000, help="Number of paired bootstrap replicates")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--alpha", type=float, default=0.25, help="Tukey alpha parameter")
 
@@ -369,6 +515,9 @@ def main() -> int:
     if args.n_realizations < 2:
         print(f"Error: n-realizations must be at least 2, got {args.n_realizations}", file=sys.stderr)
         return 1
+    if args.n_bootstrap < 100:
+        print(f"Error: n-bootstrap must be at least 100, got {args.n_bootstrap}", file=sys.stderr)
+        return 1
 
     print("================================================================================")
     print("STAGE 1.2: STATISTICALLY CALIBRATED WELCH PSD VALIDATION")
@@ -385,6 +534,7 @@ def main() -> int:
         n_realizations=args.n_realizations,
         seed=args.seed,
         alpha=args.alpha,
+        n_bootstrap=args.n_bootstrap,
     )
 
     print(f"Sampling frequency (f_s):           {res_white['f_s']:.1f} Hz")
@@ -410,12 +560,34 @@ def main() -> int:
     print(f"DC ensemble mean:                    {res_white['dc_bar']:.6e} strain^2/Hz (SE: {res_white['se_dc_bar']:.6e}, z = {res_white['z_dc']:+.3f})")
     print(f"Nyquist expected PSD:                {res_white['expected_nyquist']:.6e} strain^2/Hz")
     print(f"Nyquist ensemble mean:               {res_white['nyq_bar']:.6e} strain^2/Hz (SE: {res_white['se_nyq_bar']:.6e}, z = {res_white['z_nyquist']:+.3f})")
-    print(f"Empirical adj-seg corr (rho_P):      {res_white['measured_rho_p']:.4f} (pred: r_1^2 = {res_white['r1_squared']:.4f}, SE: {res_white['se_rho_p']:.4e}, z = {res_white['z_rho_p']:+.3f})")
+    print(f"Empirical adj-seg corr (rho_P):      {res_white['measured_rho_p']:.4f} (pred: r_1^2 = {res_white['r1_squared']:.4f})")
+    print(f"Paired bootstrap replicates (B):     {res_white['n_bootstrap']}")
+    print(f"Paired bootstrap SE (SE(rho_P)):     {res_white['se_rho_p']:.6e}")
+    print(f"Correlation standardized z-score:    {res_white['z_rho_p']:+.3f}")
     print(f"Mean Parseval relative error:        {res_white['mean_parseval_rel_diff']:.2e}")
 
-    # 2. Median-Welch Validation
-    print("\n--- Part 2: Finite-Sample Bias-Corrected Median Estimation (Independent Segments) ---")
-    res_median = validate_median_white_noise(
+    # 2. Exact Discrete Window Pseudo-Covariance Sums (Correction 3)
+    print("\n--- Part 2: Exact Discrete Pseudo-Covariance Window Sums (Correction 3) ---")
+    res_pseudo = validate_pseudo_covariance_sums(
+        segment_length=res_white["segment_length"],
+        alpha=args.alpha,
+        overlap_fraction=args.overlap,
+    )
+    print(f"Discrete window total energy (C_11): {res_pseudo['C11']:.4f}")
+    print(f"Discrete window overlap prod (C_12): {res_pseudo['C12']:.4f}")
+    print(f"Proper-complex prediction (r_w^2):   {res_pseudo['rw_squared']:.6f}")
+    print(f"DC (k=0):      |P_11|/C_11 = {res_pseudo['ratio_P11_dc']:.4e}, |P_12|/|C_12| = {res_pseudo['ratio_P12_dc']:.4e}, rho_full = {res_pseudo['rho_full_dc']:.6f}")
+    print(f"Bin k=1:       |P_11|/C_11 = {res_pseudo['ratio_P11_k1']:.4e}, |P_12|/|C_12| = {res_pseudo['ratio_P12_k1']:.4e}, rho_full = {res_pseudo['rho_full_k1']:.6f} (rel diff: {res_pseudo['rel_diff_k1']:+.4e})")
+    print(f"Bin k=2:       |P_11|/C_11 = {res_pseudo['ratio_P11_k2']:.4e}, |P_12|/|C_12| = {res_pseudo['ratio_P12_k2']:.4e}, rho_full = {res_pseudo['rho_full_k2']:.6f} (rel diff: {res_pseudo['rel_diff_k2']:+.4e})")
+    print(f"Bin k=5:       |P_11|/C_11 = {res_pseudo['ratio_P11_k5']:.4e}, |P_12|/|C_12| = {res_pseudo['ratio_P12_k5']:.4e}, rho_full = {res_pseudo['rho_full_k5']:.6f} (rel diff: {res_pseudo['rel_diff_k5']:+.4e})")
+    print(f"Nyquist (k=M/2): |P_11|/C_11 = {res_pseudo['ratio_P11_nyq']:.4e}, |P_12|/|C_12| = {res_pseudo['ratio_P12_nyq']:.4e}, rho_full = {res_pseudo['rho_full_nyq']:.6f}")
+    print(f"Analysis band [5, M/2-5] Max |P_11|/C_11:   {res_pseudo['max_ratio_P11_interior']:.4e} (Mean: {res_pseudo['mean_ratio_P11_interior']:.4e})")
+    print(f"Analysis band [5, M/2-5] Max |P_12|/|C_12|: {res_pseudo['max_ratio_P12_interior']:.4e} (Mean: {res_pseudo['mean_ratio_P12_interior']:.4e})")
+    print(f"Analysis band Max |rho_full - r_w^2|/r_w^2:  {res_pseudo['max_rel_diff_interior']:.4e} (Mean: {res_pseudo['mean_rel_diff_interior']:.4e})")
+
+    # 3A. Median-Welch Exact Rectangular Baseline (Correction 2A)
+    print("\n--- Part 3A: Median-Welch Exact Theoretical Baseline (Rectangular Window) ---")
+    res_med_rect = validate_median_white_noise_rectangular(
         f_s=args.fs,
         segment_duration=0.5,
         n_segments=15,
@@ -423,16 +595,34 @@ def main() -> int:
         n_realizations=args.n_realizations,
         seed=args.seed + 100,
     )
-    print(f"Number of independent segments (K):  {res_median['n_segments']}")
-    print(f"Stage 0.6 odd bias factor C(15):     {res_median['ck']:.6f}")
-    print(f"Expected uncorrected raw median:     {res_median['expected_raw']:.6e} strain^2/Hz")
-    print(f"Measured uncorrected raw median:     {res_median['raw_bar']:.6e} strain^2/Hz")
-    print(f"Corrected median PSD ensemble mean:  {res_median['corr_bar']:.6e} strain^2/Hz")
-    print(f"Corrected median ensemble SE:        {res_median['se_corr_bar']:.6e} strain^2/Hz")
-    print(f"Corrected median z-score:            {res_median['z_median']:+.3f}")
+    print(f"Number of independent segments (K):  {res_med_rect['n_segments']}")
+    print(f"Stage 0.6 odd bias factor C(15):     {res_med_rect['ck']:.6f}")
+    print(f"Expected uncorrected raw median:     {res_med_rect['expected_raw']:.6e} strain^2/Hz")
+    print(f"Measured uncorrected raw median:     {res_med_rect['raw_bar']:.6e} strain^2/Hz")
+    print(f"Corrected median PSD ensemble mean:  {res_med_rect['corr_bar']:.6e} strain^2/Hz")
+    print(f"Corrected median ensemble SE:        {res_med_rect['se_corr_bar']:.6e} strain^2/Hz")
+    print(f"Exact baseline median z-score:       {res_med_rect['z_median']:+.3f}")
 
-    # 3. Coloured Noise AR(1) Diagnostic Spectral Recovery
-    print("\n--- Part 3: Coloured Noise AR(1) Broad Spectral Shape (Diagnostic) ---")
+    # 3B. Median-Welch Tukey Window Diagnostic (Correction 2B)
+    print("\n--- Part 3B: Median-Welch Robustness Diagnostic (Tukey Window, alpha=0.25) ---")
+    res_med_tukey = validate_median_white_noise_tukey(
+        f_s=args.fs,
+        segment_duration=0.5,
+        n_segments=15,
+        sigma=args.sigma,
+        n_realizations=args.n_realizations,
+        seed=args.seed + 100,
+        alpha=args.alpha,
+    )
+    print(f"Number of independent segments (K):  {res_med_tukey['n_segments']}")
+    print(f"Expected uncorrected raw median:     {res_med_tukey['expected_raw']:.6e} strain^2/Hz")
+    print(f"Measured uncorrected raw median:     {res_med_tukey['raw_bar']:.6e} strain^2/Hz")
+    print(f"Corrected median PSD ensemble mean:  {res_med_tukey['corr_bar']:.6e} strain^2/Hz")
+    print(f"Corrected median ensemble SE:        {res_med_tukey['se_corr_bar']:.6e} strain^2/Hz")
+    print(f"Tukey diagnostic median z-score:     {res_med_tukey['z_median']:+.3f}")
+
+    # 4. Coloured Noise AR(1) Diagnostic Spectral Recovery
+    print("\n--- Part 4: Coloured Noise AR(1) Broad Spectral Shape (Diagnostic) ---")
     res_ar1 = validate_coloured_noise_ar1(
         phi=0.65,
         sigma_eps=args.sigma,
@@ -450,28 +640,26 @@ def main() -> int:
     print("STATISTICALLY CALIBRATED ACCEPTANCE CRITERIA CHECK")
     print("================================================================================")
 
-    # Statistically calibrated criteria:
-    # 1. Interior Welch PSD band mean within 5 standard errors: |z_Q| < 5.0
+    # Acceptance criteria:
     pass_interior = abs(res_white["z_interior"]) < 5.0
-    # 2. DC and Nyquist within 5 standard errors: |z_DC| < 5.0 and |z_Nyq| < 5.0
     pass_dc = abs(res_white["z_dc"]) < 5.0
     pass_nyq = abs(res_white["z_nyquist"]) < 5.0
-    # 3. Parseval conservation to machine precision: < 1e-10
     pass_parseval = res_white["mean_parseval_rel_diff"] < 1e-10
-    # 4. Median bias-corrected PSD within 5 standard errors: |z_M| < 5.0
-    pass_median = abs(res_median["z_median"]) < 5.0
-    # 5. Adjacent-segment correlation within 5 standard errors of r_1^2: |z_rho| < 5.0
     pass_corr = abs(res_white["z_rho_p"]) < 5.0
+    pass_med_rect = abs(res_med_rect["z_median"]) < 5.0
+    pass_pseudo = res_pseudo["max_rel_diff_interior"] < 1e-3
 
     print(f"Criteria 1: Interior band mean z-score |z_Q| < 5.0:            {'PASS' if pass_interior else 'FAIL'} (z = {res_white['z_interior']:+.3f})")
     print(f"Criteria 2: DC bin z-score |z_DC| < 5.0:                       {'PASS' if pass_dc else 'FAIL'} (z = {res_white['z_dc']:+.3f})")
     print(f"Criteria 3: Nyquist bin z-score |z_Nyq| < 5.0:                 {'PASS' if pass_nyq else 'FAIL'} (z = {res_white['z_nyquist']:+.3f})")
     print(f"Criteria 4: Parseval energy conservation error < 1e-10:        {'PASS' if pass_parseval else 'FAIL'} ({res_white['mean_parseval_rel_diff']:.2e})")
-    print(f"Criteria 5: Median-Welch bias-corrected z-score |z_M| < 5.0:   {'PASS' if pass_median else 'FAIL'} (z = {res_median['z_median']:+.3f})")
-    print(f"Criteria 6: Adjacent correlation z-score |z_rho| < 5.0:        {'PASS' if pass_corr else 'FAIL'} (z = {res_white['z_rho_p']:+.3f})")
-    print(f"Diagnostic: AR(1) coloured-noise band mean error:             {res_white and res_ar1['mean_rel_err']*100:.3f}% (max: {res_ar1['max_rel_err']*100:.3f}%)")
+    print(f"Criteria 5: Paired bootstrap correlation |z_rho| < 5.0:        {'PASS' if pass_corr else 'FAIL'} (z = {res_white['z_rho_p']:+.3f}, B = {res_white['n_bootstrap']})")
+    print(f"Criteria 6: Rectangular median exact baseline |z_M| < 5.0:     {'PASS' if pass_med_rect else 'FAIL'} (z = {res_med_rect['z_median']:+.3f})")
+    print(f"Criteria 7: Analysis band pseudo-covariance rel diff < 1e-3:   {'PASS' if pass_pseudo else 'FAIL'} ({res_pseudo['max_rel_diff_interior']:.2e})")
+    print(f"Diagnostic: Tukey median robustness diagnostic z-score:        {res_med_tukey['z_median']:+.3f}")
+    print(f"Diagnostic: AR(1) coloured-noise band mean error:             {res_ar1['mean_rel_err']*100:.3f}% (max: {res_ar1['max_rel_err']*100:.3f}%)")
 
-    all_passed = pass_interior and pass_dc and pass_nyq and pass_parseval and pass_median and pass_corr
+    all_passed = pass_interior and pass_dc and pass_nyq and pass_parseval and pass_corr and pass_med_rect and pass_pseudo
     print(f"\nOverall Validation Status: {'ALL CRITERIA PASSED' if all_passed else 'VALIDATION FAILED'}")
     return 0 if all_passed else 1
 

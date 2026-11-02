@@ -15,6 +15,7 @@ from gw_inference.conventions import (
 )
 from gw_inference.noise import generate_white_noise
 from gw_inference.psd import (
+    discrete_pseudo_covariance_ratios,
     extract_segments,
     median_bias_factor,
     single_segment_psd,
@@ -42,6 +43,7 @@ __all__ = [
     "window_overlap_correlation",
     "window_multi_lag_correlations",
     "welch_variance_inflation",
+    "discrete_pseudo_covariance_ratios",
     "extract_segments",
     "single_segment_psd",
     "median_bias_factor",

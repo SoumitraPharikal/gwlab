@@ -2,124 +2,119 @@
 ## Welch Power Spectral Density Estimation
 
 **Project:** Robust Matched Filtering and Bayesian Parameter Estimation for Compact Binary Gravitational-Wave Signals  
-**Stage:** 1.2 — Welch Power Spectral Density Estimation (Revised Post-Review)  
+**Stage:** 1.2 — Welch Power Spectral Density Estimation (Final Revision)  
 **Author:** Scientific Software Developer (AI Assistant)  
 **Supervisor / Reviewer:** Independent Scientific Reviewer (ChatGPT)  
 **Date:** 2026-11-02  
-**Repository State:** Master branch, clean working directory, 147/147 tests passing  
+**Repository State:** Master branch, clean working directory, 154/154 tests passing  
 
 ---
 
 ### 1. Executive Summary of Corrections
 
-Following independent scientific review of Stage 1.2, four targeted corrections were mandated and implemented:
+Following the independent review of commit `d56c99a`, three final targeted scientific corrections were implemented without modifying Stage 1.1 files or expanding beyond Stage 1.2 scope:
 
-1. **Correction A — Unambiguous Windowing Documentation:**
-   Replaced potentially ambiguous mathematical formulations that could be misread as applying the window twice. The code applies the window to the unwindowed data slice exactly once (`psd.py:387–390`). The notation throughout documentation and code is formalized as:
-   $$d_j^{(m)} \equiv x_{j + m H}, \qquad x_j^{(m)} \equiv d_j^{(m)} w_j = x_{j + m H} w_j, \qquad X_k^{(m)} = \operatorname{rfft}(x^{(m)})_k$$
-   A dedicated regression test (`test_window_applied_exactly_once`) verifies that the window is applied once and not squared.
+1. **Correction 1 — Paired Bootstrap Across Monte Carlo Realizations:**
+   Replaced the decoupled resampling with a true paired bootstrap:
+   ```python
+   idx = boot_rng.choice(n_realizations, size=n_realizations, replace=True)
+   boot_rho = _calc_mean_r(x_bins[idx], y_bins[idx])
+   ```
+   Both segment-0 and segment-1 periodogram arrays share the exact same resampled realization indices, preserving realization-level pairing. Resampling occurs across independent Monte Carlo trials ($R=300$), not across frequency bins. Increased bootstrap replicates to $B = 1000$. The bootstrap standard error is evaluated as the sample standard deviation with `ddof=1`. The report and docstrings explicitly clarify that the bootstrap estimates the sampling uncertainty of the realization-level correlation statistic across independent realizations, and does not establish that the theoretical correlation model is universally valid.
 
-2. **Correction B — Redesigned Median-Welch API and Independence Assumptions:**
-   Eliminated the misleading `allow_correlated_median` flag. Clarified that zero overlap does *not* establish statistical independence for coloured or temporally correlated noise. Redesigned the API so that:
-   - Raw median estimation (`bias_correct=False`) is available for robust estimation across any overlap without requiring independence assumptions.
-   - Bias correction (`bias_correct=True`) requires an explicit caller assertion `assume_independent_exponential_periodograms=True`.
-   - Any nonzero overlap (`overlap_samples > 0`) strictly rejects bias correction with a descriptive `ValueError`.
-   - Zero overlap alone never automatically authorizes bias correction without the caller's explicit assertion.
+2. **Correction 2 — Clarified and Disentangled Median-Welch Validation:**
+   Disentangled the theoretical order-statistics theorem from window-tapering approximations:
+   - **Part 3A (Exact Theoretical Baseline):** Added a dedicated experiment with independent Gaussian white noise, zero overlap, rectangular window (`window="rect"`), interior positive frequencies ($0 < k < M/2$), $K=15$ segments, and $R=300$ realizations. Because the rectangular window on white noise has identically vanishing interior pseudo-covariance ($P_{11}(k) \equiv 0$), the Fourier coefficients are strictly proper complex Gaussian and their periodograms are identically, independently exponentially distributed. This provides a mathematically exact validation of the $C(15) = 0.725372$ theorem ($z_M = -1.404$, PASS).
+   - **Part 3B (Tukey-Window Robustness Diagnostic):** Retained the Tukey-window experiment as a separate numerical robustness diagnostic, clearly labeled as evaluating empirical accuracy under mild window-induced pseudo-covariance ($z_M = +0.009$).
+   - **Conceptual Distinction:** Formally distinguished 1) independence between non-overlapping segments, 2) marginal exponential distribution of individual periodograms, and 3) the mathematical assumptions of $C(K)$. Clarified that non-overlap alone does *not* guarantee all three.
 
-3. **Correction C — Generalized Multi-Lag Overlap Covariance and Variance Inflation:**
-   Replaced the adjacent-only variance inflation approximation with the generalized all-shared-lags expression under the proper-complex Gaussian approximation:
-   $$\kappa_{\mathrm{overlap}} = 1 + 2 \sum_{\ell=1}^{\ell_{\max}} \left( 1 - \frac{\ell}{K} \right) r_\ell^2, \qquad \ell_{\max} = \min\left( \left\lfloor \frac{M - 1}{H} \right\rfloor, \, K - 1 \right)$$
-   where $r_\ell$ is computed directly from discrete window samples. Exactly reproduced the reviewer's benchmark: for $M = 256, K = 13, 75\%$ overlap, $\kappa_{\mathrm{all}} = 2.3810$ versus the adjacent-only value $2.0130$.
-
-4. **Correction D — Statistically Calibrated Monte Carlo Validation:**
-   Overhauled `scripts/validate_welch_psd.py` to eliminate fixed percentage thresholds and the improper comparison of band-averaged statistics against single-bin theoretical uncertainties. For every realization, the realization-level band statistic $Q_r = \frac{1}{|B|}\sum_{k \in B} \widehat{S}^{(r)}(f_k)$, DC $D_r$, and Nyquist $Y_r$ are recorded. The ensemble mean $\bar{Q}$, empirical standard error $\operatorname{SE}(\bar{Q}) = s_Q / \sqrt{R}$, and standardized deviation $z_Q = (\bar{Q} - Q_{\mathrm{expected}}) / \operatorname{SE}(\bar{Q})$ are computed and evaluated against a conservative $|z| < 5.0$ diagnostic threshold. The adjacent correlation uncertainty is estimated via bootstrap across realizations ($z_\rho = -0.386$).
+3. **Correction 3 — Direct Evaluation of Discrete Pseudo-Covariance Window Sums:**
+   Removed the inaccurate claim that pseudo-covariance suppression was demonstrated by $z_Q$ or $z_\rho$. Implemented `discrete_pseudo_covariance_ratios` in `src/gw_inference/psd.py` to evaluate the exact discrete window sums derived in Stage 0.6 Section 3:
+   $$C_{11} = \sum_{j=0}^{M-1} w_j^2 = M S_2, \qquad C_{12}(k) = e^{-2\pi i H k / M} \sum_{l=0}^{M-H-1} w_l w_{l+H}$$
+   $$P_{11}(k) = \sum_{j=0}^{M-1} w_j^2 e^{-4\pi i j k / M}, \qquad P_{12}(k) = e^{-2\pi i H k / M} \sum_{l=0}^{M-H-1} w_l w_{l+H} e^{-4\pi i l k / M}$$
+   Evaluated the complete Isserlis/Wick periodogram correlation:
+   $$\rho_P(k) = \frac{|C_{12}(k)|^2 + |P_{12}(k)|^2}{C_{11}^2 + |P_{11}(k)|^2}$$
+   Demonstrated numerically that:
+   - At DC ($k=0$) and Nyquist ($k=M/2$), $|P_{11}|/C_{11} = 1.0$ and $|P_{12}|/|C_{12}| = 1.0$ (proper-complex assumption fails completely, though $\rho_P \equiv r_w^2$ identically).
+   - In transition bins ($k=1..4$), pseudo-covariance causes a $+5.6\%$ deviation in $\rho_P(1)$.
+   - In the analysis band ($k \in [5, M/2-5]$), $|P_{11}|/C_{11} < 0.012$ (mean $1.76 \times 10^{-5}$) and $|\rho_{\mathrm{full}} - r_w^2|/r_w^2 < 7.81 \times 10^{-5}$ ($< 0.008\%$).
+   Explicitly distinguished theoretical proper-complex assumptions, exact discrete expressions, direct numerical measurements, and Monte Carlo empirical correlation evidence.
 
 ---
 
 ### 2. Status of Stage 0 Mathematical Audit Documents
 
-As required by Section 1 of the review instructions:
-The Stage 0 mathematical audit documents are present in the local workspace directory:
-- [`Stage_0_2_Mathematical_Consistency_Audit.md`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/Stage_0_2_Mathematical_Consistency_Audit.md)
-- [`Stage_0_3_Final_Mathematical_Consistency_Audit.md`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/Stage_0_3_Final_Mathematical_Consistency_Audit.md)
-- [`Stage_0_4_Final_Scientific_Corrections.md`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/Stage_0_4_Final_Scientific_Corrections.md)
-- [`Stage_0_5_Final_Approval_Readiness.md`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/Stage_0_5_Final_Approval_Readiness.md)
-- [`Stage_0_6_Final_Consistency_and_Approval.md`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/Stage_0_6_Final_Consistency_and_Approval.md)
+All Stage 0 mathematical consistency audit documents were located and inspected in the workspace root:
+- `Stage_0_2_Mathematical_Consistency_Audit.md` (46,558 B)
+- `Stage_0_3_Final_Mathematical_Consistency_Audit.md` (56,755 B)
+- `Stage_0_4_Final_Scientific_Corrections.md` (45,770 B)
+- `Stage_0_5_Final_Approval_Readiness.md` (46,717 B)
+- `Stage_0_6_Final_Consistency_and_Approval.md` (49,339 B)
 
-Relevant audited derivations from `Stage_0_6_Final_Consistency_and_Approval.md`:
-- Discrete Tukey window and exact midpoint sampling: Section 3.1, Section 8 (table)
-- Discrete window normalization $S_2$ and $S_1$: Stage 0.4 Section 4.1, Stage 0.6 Section 8
-- Cross-covariance $C_{12}(k)$ and Isserlis/Wick periodogram correlation: Section 3, Section 4
-- Odd/Even median correction formulas $C(K)$ and applicability limitations: Section 7
+The mathematical conventions verified include:
+- Discrete Tukey window midpoint formula: $M_{\mathrm{taper}} = \lfloor \alpha M / 2 \rfloor$.
+- Normalization factor $S_2 = 1 - 5\alpha/8 = 27/32 = 0.84375$.
+- Coherent gain $S_1 = 1 - \alpha/2 = 7/8 = 0.875$.
+- 50% overlap correlation $r_w = 4/9 \approx 0.444444$ and $r_1^2 = 16/81 \approx 0.197531$.
+- Median bias correction factor $C(15) = 0.725372$, $C(255) = 0.695104$.
+- Frequency grid endpoints and factor 2 for interior bins, factor 1 for DC/Nyquist.
+
+No mathematical contradictions between Stage 0.6 and the implementation exist.
 
 ---
 
 ### 3. Corrected Mathematical Formulation
 
 #### 3.1 Discrete Sampling and Frequency Grid
-For discrete real time series $x_j$ sampled at $f_s = 1/\Delta t$ with segment length $M$ (positive even integer), the frequency resolution is $\Delta f = 1 / (M \Delta t) = f_s / M$.
-The one-sided physical frequency grid contains $M/2 + 1$ bins:
-$$f_k = k \Delta f = \frac{k}{M \Delta t}, \qquad k = 0, 1, \dots, \frac{M}{2}$$
+For discrete real time series $x_0, x_1, \dots, x_{N-1}$ sampled at interval $\Delta t = 1/f_s$:
+$$f_k = \frac{k}{M \Delta t}, \qquad k = 0, 1, \dots, \frac{M}{2}, \qquad \Delta f = \frac{1}{M \Delta t}$$
 
 #### 3.2 Segment Extraction and Unambiguous Windowing
-Given total samples $N$ and overlap $N_{\mathrm{overlap}} \in [0, M)$, hop length is $H = M - N_{\mathrm{overlap}}$.
-The number of valid non-truncated segments is:
-$$K = \left\lfloor \frac{N - N_{\mathrm{overlap}}}{M - N_{\mathrm{overlap}}} \right\rfloor = \left\lfloor \frac{N - M}{H} \right\rfloor + 1$$
-
-For segment $m \in \{0, \dots, K-1\}$, let the unwindowed data slice be:
-$$d_j^{(m)} \equiv x_{j + m H}, \qquad j = 0, 1, \dots, M-1$$
-The windowed segment is formed by multiplying by the discrete window $w_j$ **exactly once**:
-$$x_j^{(m)} \equiv d_j^{(m)} w_j = x_{j + m H} w_j$$
-Its discrete Fourier transform is:
-$$X_k^{(m)} = \operatorname{rfft}(x^{(m)})_k = \operatorname{rfft}\left( \{ x_{j + m H} w_j \}_{j=0}^{M-1} \right)_k$$
-
-The one-sided windowed segment periodogram is:
+For segment $m \in \{0, \dots, K-1\}$ with hop length $H = M - N_{\mathrm{overlap}}$:
+$$x_j^{(m)} = x_{j + m H} \, w_j, \qquad j = 0, \dots, M-1$$
+The discrete real FFT is:
+$$X_k^{(m)} = \operatorname{rfft}(x^{(m)})_k = \sum_{j=0}^{M-1} x_j^{(m)} e^{-i 2\pi j k / M}$$
+The windowed one-sided periodogram is:
 $$\widehat{S}_m(f_k) = \begin{cases}
-\frac{\Delta t}{M S_2} |X_k^{(m)}|^2, & k = 0, \, \frac{M}{2} \\[6pt]
-\frac{2\Delta t}{M S_2} |X_k^{(m)}|^2, & 1 \le k < \frac{M}{2}
+\frac{\Delta t}{M S_2} |X_k^{(m)}|^2, & k = 0, \, M/2 \\[6pt]
+\frac{2\Delta t}{M S_2} |X_k^{(m)}|^2, & 1 \le k < M/2
 \end{cases}$$
-where $S_2 \equiv \frac{1}{M}\sum_{j=0}^{M-1} w_j^2$.
+The window $w_j$ is applied exactly once to each raw data slice prior to the FFT.
 
 #### 3.3 Discrete Tukey Window Formulation
-For taper fraction $\alpha \in [0, 1]$, $M_{\mathrm{taper}} = \lfloor \alpha M / 2 \rfloor$. For $\alpha = 0.25, M = 32{,}768$, $M_{\mathrm{taper}} = 4096$.
+With taper length $M_{\mathrm{taper}} = \lfloor \alpha M / 2 \rfloor$:
 $$w_j = \begin{cases}
 \frac{1}{2}\left[ 1 - \cos\left( \frac{\pi (j + 0.5)}{M_{\mathrm{taper}}} \right) \right], & 0 \le j < M_{\mathrm{taper}} \\[6pt]
 1.0, & M_{\mathrm{taper}} \le j < M - M_{\mathrm{taper}} \\[6pt]
-\frac{1}{2}\left[ 1 - \cos\left( \frac{\pi (M - 0.5 - j)}{M_{\mathrm{taper}}} \right) \right], & M - M_{\mathrm{taper}} \le j < M
+\frac{1}{2}\left[ 1 - \cos\left( \frac{\pi (M - 1 - j + 0.5)}{M_{\mathrm{taper}}} \right) \right], & M - M_{\mathrm{taper}} \le j < M
 \end{cases}$$
-Midpoint symmetry $w_j = w_{M - 1 - j}$ holds to machine epsilon ($< 10^{-15}$).
+Exact discrete energy sum:
+$$S_2 = \frac{1}{M} \sum_{j=0}^{M-1} w_j^2, \qquad S_1 = \frac{1}{M} \sum_{j=0}^{M-1} w_j$$
 
 #### 3.4 Generalized All-Lags Overlap Covariance
 For hop $H$, segments share time samples across lags $\ell \ge 1$ where $\ell H < M$. The normalized window correlation at lag $\ell$ is:
 $$r_\ell = \frac{\sum_{j=0}^{M - \ell H - 1} w_j w_{j + \ell H}}{\sum_{j=0}^{M-1} w_j^2}$$
-The maximum shared lag is:
-$$\ell_{\max} = \min\left( \left\lfloor \frac{M - 1}{H} \right\rfloor, \, K - 1 \right)$$
-
+The maximum shared lag is $\ell_{\max} = \min\left( \left\lfloor \frac{M - 1}{H} \right\rfloor, \, K - 1 \right)$.
 Under the proper-complex Gaussian approximation, the Welch mean variance inflation factor is:
 $$\kappa_{\mathrm{overlap}} = 1 + 2 \sum_{\ell=1}^{\ell_{\max}} \left( 1 - \frac{\ell}{K} \right) r_\ell^2$$
-- Zero overlap ($H = M$): $\ell_{\max} = 0 \implies \kappa = 1.0$.
-- Single segment ($K = 1$): $\ell_{\max} = 0 \implies \kappa = 1.0$.
-- $50\%$ overlap ($H = M/2$): $\ell_{\max} = 1 \implies \kappa = 1 + 2\frac{K-1}{K}r_1^2$ (reproduces adjacent-only result).
-- Overlap $> 50\%$ (e.g. $75\%$ overlap): includes lags $\ell = 1, 2, \dots$.
+- Zero overlap ($H = M$): $\kappa = 1.0$.
+- Single segment ($K = 1$): $\kappa = 1.0$.
+- $50\%$ overlap ($H = M/2$): $\kappa = 1 + 2\frac{K-1}{K}r_1^2$ (reproduces adjacent-only result).
+- $75\%$ overlap ($M=256, K=13$): $\kappa_{\mathrm{all}} = 2.3810$ (vs adjacent-only $\kappa_{\mathrm{adj}} = 2.0130$).
 
-#### 3.5 Median Estimator and Parity Formulas
-Raw median:
-$$\widehat{S}_{\mathrm{raw\_median}}(f_k) = \operatorname{median}_{m=0,\dots,K-1} \left( \widehat{S}_m(f_k) \right)$$
-
-Under the strict caller-asserted condition of independent exponential periodograms:
-$$\widehat{S}_{\mathrm{median}}(f_k) = \frac{\widehat{S}_{\mathrm{raw\_median}}(f_k)}{C(K)}$$
-where:
-$$C(K) = \begin{cases}
-\sum_{j=L+1}^{2L+1} \frac{1}{j}, & K = 2L+1 \text{ (odd)} \\[6pt]
-\sum_{j=L+1}^{2L} \frac{1}{j} + \frac{1}{2L}, & K = 2L \text{ (even)}
-\end{cases}$$
-Baseline values: $C(15) = 0.725372$, $C(255) = 0.695104$, $\lim_{K \to \infty} C(K) = \ln 2 \approx 0.693147$.
+#### 3.5 Exact Discrete Pseudo-Covariance and Isserlis/Wick Correlation
+For windowed segments of discrete Gaussian white noise:
+$$C_{11} = \sum_{j=0}^{M-1} w_j^2 = M S_2, \qquad C_{12}(k) = e^{-2\pi i H k / M} \sum_{l=0}^{M-H-1} w_l w_{l+H}$$
+$$P_{11}(k) = \sum_{j=0}^{M-1} w_j^2 e^{-4\pi i j k / M}, \qquad P_{12}(k) = e^{-2\pi i H k / M} \sum_{l=0}^{M-H-1} w_l w_{l+H} e^{-4\pi i l k / M}$$
+By Isserlis' theorem for complex Gaussians:
+$$\rho_P(k) = \frac{|C_{12}(k)|^2 + |P_{12}(k)|^2}{C_{11}^2 + |P_{11}(k)|^2}$$
+When $P_{11}(k) \approx 0$ and $P_{12}(k) \approx 0$, this reduces to $\rho_P^{\mathrm{approx}} = r_w^2$.
 
 ---
 
 ### 4. Revised Median API and Independence Assumptions
 
-The function `welch_psd` in `src/gw_inference/psd.py` was redesigned with explicit parameters:
+The function `welch_psd` in `src/gw_inference/psd.py` enforces:
 ```python
 def welch_psd(
     x: np.ndarray,
@@ -134,46 +129,18 @@ def welch_psd(
 ```
 
 #### Behavioral Rules and Constraints:
-1. **Raw Median Default:** Calling `method="median"` with default `bias_correct=False` returns the raw sample median without claiming unbiasedness. It operates on zero or nonzero overlap.
-2. **Explicit Bias Correction Opt-In:** Bias correction is never silently applied (`bias_correct=False` by default).
-3. **Mandatory Independence Assertion:** If `bias_correct=True`, the caller must explicitly pass `assume_independent_exponential_periodograms=True`. If omitted or `False`, a descriptive `ValueError` is raised.
-4. **Strict Rejection of Overlap for Bias Correction:** If `bias_correct=True` and `overlap_samples > 0`, a `ValueError` is immediately raised, regardless of caller assertion. Overlapping segments share data and violate the independence assumption.
-5. **No Automatic Authorization from Zero Overlap:** Zero overlap alone does *not* authorize bias correction. The caller must explicitly assert independence because coloured or temporally correlated noise can retain inter-segment dependence across non-overlapping segments.
-6. **Software Incapability Notice:** Docstrings explicitly declare that the software cannot independently verify whether the input data satisfy the independent exponential periodogram assumption.
+1. **Raw Sample Median (`bias_correct=False`):** Fully available for any overlap (0%, 50%, 75%). No assertions required.
+2. **Bias-Corrected Median (`bias_correct=True`):**
+   - **Strictly rejected for overlapping segments:** If `overlap_samples > 0`, raises `ValueError`.
+   - **Gated by caller assertion:** Requires `assume_independent_exponential_periodograms=True`. Zero overlap alone does *not* authorize bias correction because coloured noise can retain inter-segment dependence across disjoint slices, and window tapering can perturb the marginal exponential distribution.
 
 ---
 
-### 5. Overlap Covariance and 75% Benchmark Verification
+### 5. Statistically Calibrated Monte Carlo Methodology
 
-#### 5.1 Reusable Multi-Lag Implementation
-Two new public functions were added to `src/gw_inference/psd.py` and exported in `src/gw_inference/__init__.py`:
-- `window_multi_lag_correlations(window, hop_length, max_lag=None) -> np.ndarray`
-- `welch_variance_inflation(window, segment_length, overlap_samples, n_segments) -> float`
+The numerical validation script `scripts/validate_welch_psd.py` adheres to strict statistical testing standards:
 
-#### 5.2 Independent Review Benchmark Verification
-For segment length $M = 256$, number of segments $K = 13$, and $75\%$ overlap ($N_{\mathrm{overlap}} = 192, H = 64$):
-$$\ell_{\max} = \min\left( \left\lfloor \frac{255}{64} \right\rfloor, 12 \right) = \min(3, 12) = 3$$
-
-Evaluating on the discrete Tukey window ($\alpha = 0.25$):
-- Lag $\ell = 1$ ($64$ samples hop): $r_1 = 0.740741$
-- Lag $\ell = 2$ ($128$ samples hop): $r_2 = 0.444444$
-- Lag $\ell = 3$ ($192$ samples hop): $r_3 = 0.148148$
-
-Variance inflation calculations:
-- **Adjacent-only formula:**
-  $$\kappa_{\mathrm{adjacent}} = 1 + 2 \left(1 - \frac{1}{13}\right) r_1^2 = 1 + 2\left(\frac{12}{13}\right)(0.740741)^2 \approx \mathbf{2.0130}$$
-- **All-shared-lags formula (implemented):**
-  $$\kappa_{\mathrm{all}} = 1 + 2 \left[ \left(\frac{12}{13}\right)(0.740741)^2 + \left(\frac{11}{13}\right)(0.444444)^2 + \left(\frac{10}{13}\right)(0.148148)^2 \right] \approx \mathbf{2.3810}$$
-
-Both values match the independent reviewer's benchmark figures to 4 decimal places, confirmed by automated regression test `test_independent_review_benchmark_75_percent_overlap`.
-
----
-
-### 6. Statistically Calibrated Monte Carlo Methodology
-
-The numerical validation script `scripts/validate_welch_psd.py` was revised to adhere to rigorous statistical testing standards:
-
-#### 6.1 Realization-Level Band Statistic
+#### 5.1 Realization-Level Band Statistic
 For each Monte Carlo trial $r = 1, \dots, R$:
 1. Generate independent white noise $x^{(r)} \sim \mathcal{N}(0, \sigma^2)$.
 2. Estimate Welch PSD $\widehat{S}^{(r)}(f_k)$.
@@ -181,34 +148,35 @@ For each Monte Carlo trial $r = 1, \dots, R$:
    $$Q_r \equiv \frac{1}{|B|} \sum_{k \in B} \widehat{S}^{(r)}(f_k), \qquad B = \{ k : 10 \le k \le M/2 - 10 \}$$
 4. Compute realization-level endpoints: $D_r \equiv \widehat{S}^{(r)}(0)$ and $Y_r \equiv \widehat{S}^{(r)}(f_{\mathrm{Nyq}})$.
 
-#### 6.2 Standardized Deviations ($z$-Scores)
-Across the $R$ realizations:
+#### 5.2 Standardized Deviations ($z$-Scores)
 - Ensemble mean: $\bar{Q} = \frac{1}{R} \sum_{r=1}^R Q_r$
 - Sample standard deviation: $s_Q = \sqrt{\frac{1}{R-1}\sum_{r=1}^R (Q_r - \bar{Q})^2}$
 - Standard error of ensemble mean: $\operatorname{SE}(\bar{Q}) = \frac{s_Q}{\sqrt{R}}$
-- Standardized deviation:
-  $$z_Q = \frac{\bar{Q} - Q_{\mathrm{expected}}}{\operatorname{SE}(\bar{Q})}$$
-Similarly, $z_{\mathrm{DC}} = (\bar{D} - D_{\mathrm{expected}}) / \operatorname{SE}(\bar{D})$ and $z_{\mathrm{Nyq}} = (\bar{Y} - Y_{\mathrm{expected}}) / \operatorname{SE}(\bar{Y})$.
+- Standardized deviation: $z_Q = \frac{\bar{Q} - Q_{\mathrm{expected}}}{\operatorname{SE}(\bar{Q})}$
+- Threshold: $|z| < 5.0$.
 
-**Acceptance Criterion:** $|z| < 5.0$. A 5-standard-error threshold provides a statistically grounded, highly conservative diagnostic that tolerates multi-hypothesis repeated testing while immediately detecting true implementation bias or scale-factor defects.
+#### 5.3 Paired Bootstrap for Adjacent Correlation (Correction 1)
+For adjacent segments across $R = 300$ realizations:
+```python
+boot_rng = np.random.default_rng(seed + 999)
+boot_rhos = np.empty(n_bootstrap, dtype=np.float64)
+for b in range(n_bootstrap):
+    idx = boot_rng.choice(n_realizations, size=n_realizations, replace=True)
+    boot_rhos[b] = _calc_mean_r(x_bins[idx], y_bins[idx])
+se_rho_p = float(np.std(boot_rhos, ddof=1))
+z_rho_p = float((measured_rho_p - r1_squared) / se_rho_p)
+```
+- Replicates: $B = 1000$.
+- Preserves the paired realization structure $(x^{(r)}, y^{(r)})$.
+- The bootstrap estimates sampling uncertainty of the correlation statistic across independent realizations; it does not establish that the theoretical correlation model is universally valid.
 
-#### 6.3 Clear Distinction of Uncertainties
-The validation script explicitly reports and distinguishes:
-1. **Single-bin theoretical standard error:** $\operatorname{SE}(f_k) = \frac{S_n(f_k)}{\sqrt{R \cdot K}}\sqrt{\kappa_{\mathrm{overlap}}}$ ($= 8.516 \times 10^{-6}$ strain$^2/\mathrm{Hz}$).
-2. **Realization-level band standard deviation:** $s_Q$ ($= 3.865 \times 10^{-6}$ strain$^2/\mathrm{Hz}$).
-3. **Ensemble mean standard error:** $\operatorname{SE}(\bar{Q}) = s_Q / \sqrt{R}$ ($= 2.232 \times 10^{-7}$ strain$^2/\mathrm{Hz}$).
-
-#### 6.4 Bootstrap Uncertainty for Adjacent Correlation
-For adjacent segments across $R$ realizations, the mean interior correlation $\bar{\rho}_P$ is compared against $r_1^2 = (4/9)^2 \approx 0.1975$. Its sampling uncertainty $\operatorname{SE}(\bar{\rho}_P)$ is estimated using 100 bootstrap resamples across trials:
-$$z_\rho = \frac{\bar{\rho}_P - r_1^2}{\operatorname{SE}(\bar{\rho}_P)}$$
-Acceptance: $|z_\rho| < 5.0$.
-
-#### 6.5 Coloured Noise Diagnostic
-The AR(1) coloured-noise test is formulated as a diagnostic comparison of broad spectral shape. The theoretical spectrum $S(f) = \frac{2\sigma_\epsilon^2 \Delta t}{1 + \phi^2 - 2\phi \cos(2\pi f \Delta t)}$ is reported alongside the realization-averaged estimate. Spectral smoothing from finite-window convolution is documented.
+#### 5.4 Exact Rectangular Median Baseline vs Tukey Diagnostic (Correction 2)
+- **Part 3A (Rectangular Baseline):** $K=15$ independent segments, zero overlap, rectangular window ($P_{11}(k) \equiv 0$). Tests exact $C(K)$ independent-exponential theorem.
+- **Part 3B (Tukey Diagnostic):** $K=15$ segments, zero overlap, Tukey window ($\alpha=0.25$). Numerical robustness diagnostic under mild window-induced pseudo-covariance.
 
 ---
 
-### 7. Numerical Validation Results
+### 6. Numerical Validation Results
 
 Execution of `python scripts/validate_welch_psd.py --n-realizations 300 --seed 42`:
 
@@ -241,19 +209,43 @@ DC expected PSD:                     2.441406e-04 strain^2/Hz
 DC ensemble mean:                    2.421378e-04 strain^2/Hz (SE: 6.745622e-06, z = -0.297)
 Nyquist expected PSD:                2.441406e-04 strain^2/Hz
 Nyquist ensemble mean:               2.431392e-04 strain^2/Hz (SE: 6.143074e-06, z = -0.163)
-Empirical adj-seg corr (rho_P):      0.1969 (pred: r_1^2 = 0.1975, SE: 1.5986e-03, z = -0.386)
+Empirical adj-seg corr (rho_P):      0.1969 (pred: r_1^2 = 0.1975)
+Paired bootstrap replicates (B):     1000
+Paired bootstrap SE (SE(rho_P)):     1.404661e-03
+Correlation standardized z-score:    -0.439
 Mean Parseval relative error:        7.35e-17
 
---- Part 2: Finite-Sample Bias-Corrected Median Estimation (Independent Segments) ---
+--- Part 2: Exact Discrete Pseudo-Covariance Window Sums (Correction 3) ---
+Discrete window total energy (C_11): 3456.0000
+Discrete window overlap prod (C_12): 1536.0000
+Proper-complex prediction (r_w^2):   0.197531
+DC (k=0):      |P_11|/C_11 = 1.0000e+00, |P_12|/|C_12| = 1.0000e+00, rho_full = 0.197531
+Bin k=1:       |P_11|/C_11 = 1.5090e-01, |P_12|/|C_12| = 2.8294e-01, rho_full = 0.208594 (rel diff: +5.6009e-02)
+Bin k=2:       |P_11|/C_11 = 7.4074e-02, |P_12|/|C_12| = 1.6667e-01, rho_full = 0.201910 (rel diff: +2.2169e-02)
+Bin k=5:       |P_11|/C_11 = 1.1976e-02, |P_12|/|C_12| = 8.0841e-03, rho_full = 0.197515 (rel diff: -7.8071e-05)
+Nyquist (k=M/2): |P_11|/C_11 = 1.0000e+00, |P_12|/|C_12| = 1.0000e+00, rho_full = 0.197531
+Analysis band [5, M/2-5] Max |P_11|/C_11:   1.1976e-02 (Mean: 1.7621e-05)
+Analysis band [5, M/2-5] Max |P_12|/|C_12|: 8.0841e-03 (Mean: 1.3876e-05)
+Analysis band Max |rho_full - r_w^2|/r_w^2:  7.8071e-05 (Mean: 7.7495e-08)
+
+--- Part 3A: Median-Welch Exact Theoretical Baseline (Rectangular Window) ---
 Number of independent segments (K):  15
 Stage 0.6 odd bias factor C(15):     0.725372
+Expected uncorrected raw median:     3.541855e-04 strain^2/Hz
+Measured uncorrected raw median:     3.538620e-04 strain^2/Hz
+Corrected median PSD ensemble mean:  4.878353e-04 strain^2/Hz
+Corrected median ensemble SE:        3.177379e-07 strain^2/Hz
+Exact baseline median z-score:       -1.404
+
+--- Part 3B: Median-Welch Robustness Diagnostic (Tukey Window, alpha=0.25) ---
+Number of independent segments (K):  15
 Expected uncorrected raw median:     3.541855e-04 strain^2/Hz
 Measured uncorrected raw median:     3.541877e-04 strain^2/Hz
 Corrected median PSD ensemble mean:  4.882843e-04 strain^2/Hz
 Corrected median ensemble SE:        3.391336e-07 strain^2/Hz
-Corrected median z-score:            +0.009
+Tukey diagnostic median z-score:     +0.009
 
---- Part 3: Coloured Noise AR(1) Broad Spectral Shape (Diagnostic) ---
+--- Part 4: Coloured Noise AR(1) Broad Spectral Shape (Diagnostic) ---
 AR(1) parameter phi:                 0.65
 Mean relative error across band:     1.553% (diagnostic spectral agreement)
 Max relative error across band:      6.882% (reflects window spectral smoothing)
@@ -265,8 +257,10 @@ Criteria 1: Interior band mean z-score |z_Q| < 5.0:            PASS (z = -0.956)
 Criteria 2: DC bin z-score |z_DC| < 5.0:                       PASS (z = -0.297)
 Criteria 3: Nyquist bin z-score |z_Nyq| < 5.0:                 PASS (z = -0.163)
 Criteria 4: Parseval energy conservation error < 1e-10:        PASS (7.35e-17)
-Criteria 5: Median-Welch bias-corrected z-score |z_M| < 5.0:   PASS (z = +0.009)
-Criteria 6: Adjacent correlation z-score |z_rho| < 5.0:        PASS (z = -0.386)
+Criteria 5: Paired bootstrap correlation |z_rho| < 5.0:        PASS (z = -0.439, B = 1000)
+Criteria 6: Rectangular median exact baseline |z_M| < 5.0:     PASS (z = -1.404)
+Criteria 7: Analysis band pseudo-covariance rel diff < 1e-3:   PASS (7.81e-05)
+Diagnostic: Tukey median robustness diagnostic z-score:        +0.009
 Diagnostic: AR(1) coloured-noise band mean error:             1.553% (max: 6.882%)
 
 Overall Validation Status: ALL CRITERIA PASSED
@@ -274,104 +268,82 @@ Overall Validation Status: ALL CRITERIA PASSED
 
 ---
 
-### 8. Full Test Results
+### 7. Full Test Suite Results
 
-Execution of `pytest` from the workspace root:
+The complete test suite runs and passes in 2.02 seconds:
+
 ```text
 ============================= test session starts =============================
 platform win32 -- Python 3.13.5, pytest-9.2.0, pluggy-1.7.0
 rootdir: C:\Users\Soumitra\Desktop\GW-matched-filtering-and-baysian-interference
 configfile: pyproject.toml
 testpaths: tests
-collected 147 items
+plugins: anyio-4.6.2.post1, zarr-3.2.1
+collected 154 items
 
-tests/test_conventions.py ..................................................... [ 36%]
-...................................                                             [ 60%]
-tests/test_noise.py .............                                               [ 69%]
-tests/test_psd.py ..............................................                [100%]
+tests/test_conventions.py ..................................................... [ 34%]
+...................................                                             [ 57%]
+tests/test_noise.py .............                                               [ 65%]
+tests/test_psd.py ............................................................. [100%]
 
-============================= 147 passed in 1.72s =============================
+============================= 154 passed in 2.02s =============================
 ```
 
-#### Test Suite Breakdown (147 tests total):
-- `tests/test_conventions.py` (86 tests): Fourier conventions, FFT scaling, frequency grid, discrete Parseval conservation, one-sided periodogram folding.
-- `tests/test_noise.py` (13 tests): White-noise generation, seed reproducibility, sample statistics convergence, input validation.
-- `tests/test_psd.py` (48 tests):
+#### Test Suite Breakdown (154 tests total):
+- `tests/test_conventions.py` (86 tests): Fourier conventions, scaling, grid, Parseval, folding.
+- `tests/test_noise.py` (13 tests): White-noise generation, seed reproducibility, sample statistics.
+- `tests/test_psd.py` (55 tests):
   - Frequency grid properties and Stage 1.1 consistency: 2 tests
   - Window normalization, symmetry, short segments, multi-lag correlations: 6 tests
   - Single-segment consistency, single-window application proof, Parseval conservation: 4 tests
   - White-noise ensemble PSD expectation: 1 test
   - Segment extraction, overlap bounds, trailing sample discarding: 6 tests
   - Coloured-noise AR(1) spectral shape recovery: 1 test
-  - Generalized all-lags variance inflation factor (Correction C): 5 tests
-  - Redesigned median estimator, raw median, assertion gating (Correction B): 8 tests
+  - Generalized all-lags variance inflation factor: 5 tests
+  - Exact discrete pseudo-covariance window sums (Correction 3): 4 tests
+  - Redesigned median estimator, raw median, exact rectangular baseline, assertion gating: 9 tests
   - Input rejection (complex, NaN, Inf, invalid dimensions, invalid parameter combinations): 7 tests
-  - Validation script integration smoke tests: 3 tests
+  - Validation script integration smoke tests: 5 tests
 
 ---
 
-### 9. Files Created and Modified
+### 8. Files Created and Modified
 
 1. **Modified in this revision:**
    - [`src/gw_inference/psd.py`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/src/gw_inference/psd.py):
-     - Corrected windowing docstring notation ($x_j^{(m)} = x_{j+mH} w_j$).
-     - Implemented `window_multi_lag_correlations` and `welch_variance_inflation`.
-     - Redesigned `welch_psd` with `bias_correct` and `assume_independent_exponential_periodograms`. Removed `allow_correlated_median`.
+     - Implemented `discrete_pseudo_covariance_ratios` evaluating exact discrete window sums.
+     - Preserved all-lags variance inflation and median API gating.
    - [`src/gw_inference/__init__.py`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/src/gw_inference/__init__.py):
-     - Exported `window_multi_lag_correlations` and `welch_variance_inflation`.
-   - [`tests/test_psd.py`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/tests/test_psd.py):
-     - Added `test_window_applied_exactly_once`.
-     - Added 5 all-lags variance inflation tests including $75\%$ benchmark.
-     - Added 8 median API tests verifying raw median and assertion gating.
+     - Exported `discrete_pseudo_covariance_ratios`.
    - [`scripts/validate_welch_psd.py`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/scripts/validate_welch_psd.py):
-     - Statistically calibrated Monte Carlo procedure using realization-level statistics, standardized $z$-scores, and bootstrap correlation uncertainty.
+     - Implemented paired bootstrap ($B=1000$) across Monte Carlo realizations.
+     - Added direct numerical evaluation of discrete pseudo-covariance sums (Part 2).
+     - Disentangled exact rectangular baseline ($K=15, z_M = -1.404$) from Tukey robustness diagnostic ($z_M = +0.009$).
+   - [`tests/test_psd.py`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/tests/test_psd.py):
+     - Added `TestPseudoCovariance` with 4 dedicated tests.
+     - Added `test_exact_rectangular_white_noise_median`.
+     - Updated integration smoke tests (total 154 tests).
    - [`README.md`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/README.md):
-     - Updated to reflect revised median API and multi-lag covariance features.
+     - Updated test counts and feature checklists.
    - [`reports/Stage_1_2_Implementation_Report.md`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/reports/Stage_1_2_Implementation_Report.md):
-     - Full technical documentation of the four corrections and revised results.
+     - Updated documentation reflecting the three targeted corrections.
 
 ---
 
-### 10. Git Status and Commit Information
+### 9. Remaining Limitations and Scope Boundaries
 
-The working tree is completely clean. All changes have been staged and committed to branch `master`:
-
-- **Branch:** `master`
-- **Prior Commit:** `5118e85` (Initial Stage 1.2 implementation)
-- **Current Commit:** `72506bc`
-- **Commit Subject:** `fix(stage-1.2): apply reviewer revisions to window notation, median API, all-lags covariance, and calibrated validation`
-
----
-
-### 11. Remaining Limitations
-
-1. **Proper-Complex Gaussian Approximation:** The generalized all-lags expression $\kappa_{\mathrm{overlap}} = 1 + 2 \sum_{\ell=1}^{\ell_{\max}} (1 - \ell/K) r_\ell^2$ assumes that pseudo-covariance is suppressed. While this holds with high precision across the analysis band ($z_Q = -0.956, z_\rho = -0.386$), bins in the immediate vicinity of DC ($f \to 0$) retain non-zero pseudo-covariance.
+1. **Proper-Complex Gaussian Approximation:** The generalized all-lags expression $\kappa_{\mathrm{overlap}} = 1 + 2 \sum_{\ell=1}^{\ell_{\max}} (1 - \ell/K) r_\ell^2$ is conditional on the proper-complex Gaussian approximation. Direct numerical evaluation of the discrete window sums confirms that for the discrete Tukey window ($\alpha=0.25$), pseudo-covariance is suppressed across the analysis band ($k \in [5, M/2-5]$), introducing a relative error on $\rho_P$ of less than $0.008\%$. However, at DC ($k=0$), Nyquist ($k=M/2$), and transition bins ($k=1..4$), pseudo-covariance is significant ($|P_{11}|/C_{11} \ge 1.2\%$) and the proper-complex approximation breaks down.
 2. **Median Variance Under Overlap:** While raw median estimation is robust and fully supported for overlapping segments, no simple universal analytical variance inflation factor exists for median order statistics under correlated Gaussian processes.
-3. **Window Spectral Leakage Near Steep Gradients:** Scalar division by $S_2$ assumes locally flat spectra. Low-frequency seismic drift ($\propto f^{-4}$) requires the time-domain Butterworth bandpass conditioning scheduled for Stage 1.3.
+3. **Window Spectral Leakage Near Steep Gradients:** Scalar division by $S_2$ assumes locally flat spectra across the window kernel's main lobe. Low-frequency seismic drift ($\propto f^{-4}$) requires the time-domain Butterworth bandpass conditioning scheduled for Stage 1.3.
 
 ---
 
-### 12. Confirmation: Stage 1.1 Unchanged
+### 10. Confirmations
 
 I formally confirm that:
-- Continuous Fourier transform conventions ($\tilde{x}(f_k) \simeq \Delta t X_k$) in `conventions.py` are unchanged.
-- One-sided periodogram normalization and frequency grid generation in `conventions.py` are unchanged.
-- White noise generation in `noise.py` is unchanged.
-- All 99 pre-existing Stage 1.1 unit tests pass identically with zero modifications.
+- Stage 1.1 source files (`conventions.py`, `noise.py`, `test_conventions.py`, `test_noise.py`, `validate_white_noise_psd.py`) remain completely unchanged.
+- No functionality from Stage 1.3 or later has been implemented (no Butterworth bandpass filtering, no whitening, no matched filtering, no waveform models, no Bayesian sampling).
 
 ---
 
-### 13. Confirmation: No Stage 1.3+ Functionality Implemented
-
-I formally confirm that no functionality from Stage 1.3 or later has been implemented:
-- No Butterworth bandpass filtering, `filtfilt`, or transient trimming.
-- No frequency-domain noise whitening or normalized residuals.
-- No noise-weighted inner products, optimal SNR, or matched filtering.
-- No waveform generation (`TaylorF2`, `IMRPhenomD`).
-- No Whittle likelihood evaluation or phase marginalization.
-- No Bayesian parameter estimation or MCMC / nested sampling.
-- No real detector strain data downloaded or ingested from GWOSC.
-
----
-
-*Stage 1.2 (revised) is hereby submitted to the independent scientific reviewer (ChatGPT) for formal evaluation.*
+*Stage 1.2 (final revision) is hereby submitted to the independent scientific reviewer (ChatGPT) for formal evaluation.*
