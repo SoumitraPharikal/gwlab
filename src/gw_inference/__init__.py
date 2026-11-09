@@ -41,6 +41,17 @@ from gw_inference.psd import (
     window_overlap_correlation,
     window_power,
 )
+from gw_inference.filter import (
+    MatchedFilterResult,
+    compute_chisq_binned,
+    compute_reweighted_snr,
+    compute_signed_lags,
+    compute_template_norm,
+    direct_matched_filter_at_lag,
+    matched_filter,
+    matched_filter_core,
+    noise_weighted_inner_product,
+)
 from gw_inference.waveform import (
     apply_coalescence_time_shift,
     component_masses_to_chirp_mass,
@@ -99,4 +110,14 @@ __all__ = [
     "apply_coalescence_time_shift",
     "newtonian_chirp_time",
     "taylorf2_35pn_chirp_time",
+    # Matched Filtering & Detection (WP3)
+    "MatchedFilterResult",
+    "compute_chisq_binned",
+    "compute_reweighted_snr",
+    "compute_signed_lags",
+    "compute_template_norm",
+    "direct_matched_filter_at_lag",
+    "matched_filter",
+    "matched_filter_core",
+    "noise_weighted_inner_product",
 ]
