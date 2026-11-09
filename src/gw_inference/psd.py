@@ -827,3 +827,289 @@ def welch_psd(
 
     freqs = build_frequency_grid(segment_length, dt)
     return freqs, psd
+
+
+def low_frequency_psd_continuation(
+    frequencies: np.ndarray,
+    psd: np.ndarray,
+    f_start: float,
+    f_0: float,
+) -> np.ndarray:
+    """Apply regularized operational low-frequency PSD continuation below f_start.
+
+    Functional form (frozen Group A specification):
+        S_n(f) = S_n(f_start) * [ (f_start^2 + f_0^2) / (f^2 + f_0^2) ]^2,  for 0 <= f < f_start
+
+    Guarantees C^0 continuity at f_start. Note that C^1 derivative continuity is
+    not guaranteed.
+
+    Governance Note:
+    ----------------
+    The parameter f_0 regulates the low-frequency roll-off below f_start.
+    Because Decision D8 remains open and unconfirmed by the Project Lead,
+    f_0 MUST be provided explicitly; no default is provided.
+
+    Parameters
+    ----------
+    frequencies : np.ndarray
+        1D array of frequency values in Hz.
+    psd : np.ndarray
+        1D array of power spectral density values in [strain]^2 / Hz.
+    f_start : float
+        Lower boundary of the active analysis band in Hz. Must be positive and finite.
+    f_0 : float
+        Regularization frequency scale in Hz. Must be positive and finite (explicit, Decision D8 open).
+
+    Returns
+    -------
+    np.ndarray
+        Modified PSD array with continuation applied for all f < f_start.
+
+    Raises
+    ------
+    ValueError
+        If inputs are invalid or non-finite, if f_start <= 0 or f_0 <= 0,
+        or if psd contains non-positive values.
+    """
+    if (
+        not isinstance(f_start, (int, float, np.floating))
+        or not math.isfinite(f_start)
+        or f_start <= 0
+    ):
+        raise ValueError(f"f_start must be a positive finite float, got {f_start}")
+    if (
+        not isinstance(f_0, (int, float, np.floating))
+        or not math.isfinite(f_0)
+        or f_0 <= 0
+    ):
+        raise ValueError(f"f_0 must be a positive finite float, got {f_0}")
+
+    freqs_arr = np.asarray(frequencies, dtype=np.float64)
+    psd_arr = np.asarray(psd, dtype=np.float64)
+
+    if freqs_arr.ndim != 1 or psd_arr.ndim != 1:
+        raise ValueError("frequencies and psd must be 1D arrays")
+    if freqs_arr.size != psd_arr.size:
+        raise ValueError(
+            f"frequencies length ({freqs_arr.size}) must match psd length ({psd_arr.size})"
+        )
+    if not np.all(np.isfinite(freqs_arr)) or not np.all(np.isfinite(psd_arr)):
+        raise ValueError("frequencies and psd must contain only finite numbers")
+    if np.any(psd_arr <= 0):
+        raise ValueError("psd values must be strictly positive")
+
+    # Find or interpolate S_n(f_start)
+    if f_start in freqs_arr:
+        idx = np.where(freqs_arr == f_start)[0][0]
+        s_at_start = psd_arr[idx]
+    else:
+        # Linear interpolation in log-log space at f_start
+        pos_mask = freqs_arr > 0
+        if not np.any(pos_mask):
+            raise ValueError("frequencies must contain positive values")
+        pos_f = freqs_arr[pos_mask]
+        pos_p = psd_arr[pos_mask]
+        if f_start < pos_f[0] or f_start > pos_f[-1]:
+            raise ValueError(
+                f"f_start ({f_start} Hz) is outside the measured frequency range "
+                f"[{pos_f[0]}, {pos_f[-1]}] Hz"
+            )
+        s_at_start = float(
+            np.exp(np.interp(np.log(f_start), np.log(pos_f), np.log(pos_p)))
+        )
+
+    out_psd = psd_arr.copy()
+    low_mask = freqs_arr < float(f_start)
+
+    if np.any(low_mask):
+        f_low = freqs_arr[low_mask]
+        ratio = (f_start**2 + f_0**2) / (f_low**2 + f_0**2)
+        out_psd[low_mask] = s_at_start * (ratio**2)
+
+    return out_psd
+
+
+class PSDEngine:
+    """Authoritative power spectral density (PSD) interpolation and management engine.
+
+    Provides continuous-spectrum interpolation, low-frequency regularization below f_start,
+    strict positivity enforcement, and active-bin PSD extraction.
+    """
+
+    def __init__(self, frequencies: np.ndarray, psd: np.ndarray):
+        """Initialize PSDEngine with discrete frequency and PSD arrays.
+
+        Parameters
+        ----------
+        frequencies : np.ndarray
+            1D array of frequency values in Hz. Must be strictly increasing.
+        psd : np.ndarray
+            1D array of one-sided PSD values in [strain]^2 / Hz. Must be strictly positive.
+        """
+        f_arr = np.asarray(frequencies, dtype=np.float64)
+        p_arr = np.asarray(psd, dtype=np.float64)
+
+        if f_arr.ndim != 1 or p_arr.ndim != 1:
+            raise ValueError("frequencies and psd must be 1D arrays")
+        if f_arr.size != p_arr.size:
+            raise ValueError(
+                f"frequencies length ({f_arr.size}) must match psd length ({p_arr.size})"
+            )
+        if f_arr.size < 2:
+            raise ValueError("frequencies and psd must have at least 2 points")
+        if not np.all(np.isfinite(f_arr)) or not np.all(np.isfinite(p_arr)):
+            raise ValueError("frequencies and psd must contain only finite numbers")
+        if np.any(p_arr <= 0):
+            idx_bad = np.where(p_arr <= 0)[0][0]
+            raise ValueError(
+                f"PSD values must be strictly positive (> 0); found non-positive value "
+                f"{p_arr[idx_bad]} at frequency {f_arr[idx_bad]} Hz (index {idx_bad})"
+            )
+        if not np.all(np.diff(f_arr) > 0):
+            raise ValueError("frequencies array must be strictly monotonically increasing")
+
+        self._frequencies = f_arr
+        self._psd = p_arr
+
+    @property
+    def frequencies(self) -> np.ndarray:
+        """Return measured frequency array."""
+        return self._frequencies
+
+    @property
+    def psd(self) -> np.ndarray:
+        """Return measured PSD array."""
+        return self._psd
+
+    @property
+    def f_min(self) -> float:
+        """Return minimum frequency in measured PSD."""
+        return float(self._frequencies[0])
+
+    @property
+    def f_max(self) -> float:
+        """Return maximum frequency in measured PSD."""
+        return float(self._frequencies[-1])
+
+    def interpolate(
+        self,
+        target_frequencies: np.ndarray,
+        f_start: float,
+        f_0: float,
+    ) -> np.ndarray:
+        """Interpolate PSD onto target frequencies with low-frequency continuation below f_start.
+
+        Interpolation Method:
+        ---------------------
+        - For f < f_start: Evaluates the frozen Group A analytical continuation:
+            S_n(f) = S_n(f_start) * [ (f_start^2 + f_0^2) / (f^2 + f_0^2) ]^2
+        - For f_start <= f <= f_max: Piecewise linear interpolation in (ln f, ln S_n) space.
+          This guarantees strict positivity (exp(interpolant) > 0) and preserves power laws.
+        - For f > f_max: Strictly rejected with a ValueError. Extrapolation beyond the
+          measured band is unsupported.
+
+        Parameters
+        ----------
+        target_frequencies : np.ndarray
+            1D array of physical frequencies in Hz.
+        f_start : float
+            Lower analysis boundary in Hz. Must be positive and <= f_max.
+        f_0 : float
+            Continuation frequency scale in Hz. Must be positive (explicit, Decision D8 open).
+
+        Returns
+        -------
+        np.ndarray
+            1D array of interpolated PSD values matching target_frequencies shape.
+        """
+        targets = np.asarray(target_frequencies, dtype=np.float64)
+        if targets.ndim != 1:
+            raise ValueError("target_frequencies must be a 1D array")
+        if not np.all(np.isfinite(targets)):
+            raise ValueError("target_frequencies must contain only finite numbers")
+        if np.any(targets < 0):
+            raise ValueError("target_frequencies cannot contain negative frequencies")
+
+        if (
+            not isinstance(f_start, (int, float, np.floating))
+            or not math.isfinite(f_start)
+            or f_start <= 0
+        ):
+            raise ValueError(f"f_start must be a positive finite float, got {f_start}")
+        if (
+            not isinstance(f_0, (int, float, np.floating))
+            or not math.isfinite(f_0)
+            or f_0 <= 0
+        ):
+            raise ValueError(f"f_0 must be a positive finite float, got {f_0}")
+
+        if np.any(targets > self.f_max):
+            max_exceed = float(np.max(targets))
+            raise ValueError(
+                f"Requested frequency {max_exceed} Hz exceeds maximum measured PSD frequency "
+                f"({self.f_max} Hz); high-frequency extrapolation is unsupported"
+            )
+
+        # Baseline value at f_start
+        pos_mask = self._frequencies > 0
+        pos_f = self._frequencies[pos_mask]
+        pos_p = self._psd[pos_mask]
+
+        if f_start < pos_f[0] or f_start > pos_f[-1]:
+            raise ValueError(
+                f"f_start ({f_start} Hz) is outside the positive frequency range "
+                f"[{pos_f[0]}, {pos_f[-1]}] Hz"
+            )
+
+        ln_f_pos = np.log(pos_f)
+        ln_p_pos = np.log(pos_p)
+        s_at_start = float(np.exp(np.interp(np.log(f_start), ln_f_pos, ln_p_pos)))
+
+        out = np.empty_like(targets)
+
+        # Sub-band continuation: f < f_start
+        low_mask = targets < float(f_start)
+        if np.any(low_mask):
+            f_low = targets[low_mask]
+            ratio = (f_start**2 + f_0**2) / (f_low**2 + f_0**2)
+            out[low_mask] = s_at_start * (ratio**2)
+
+        # In-band interpolation: f >= f_start
+        in_mask = ~low_mask
+        if np.any(in_mask):
+            f_in = targets[in_mask]
+            ln_targets_in = np.log(f_in)
+            out[in_mask] = np.exp(np.interp(ln_targets_in, ln_f_pos, ln_p_pos))
+
+        return out
+
+    def get_inverse_psd_on_active_bins(
+        self,
+        frequencies: np.ndarray,
+        mask: np.ndarray,
+        f_start: float,
+        f_0: float,
+    ) -> np.ndarray:
+        """Extract inverse PSD weights 1 / S_n(f_k) strictly on the active bins.
+
+        Parameters
+        ----------
+        frequencies : np.ndarray
+            Full frequency grid array.
+        mask : np.ndarray
+            Boolean active observation mask.
+        f_start : float
+            Lower analysis frequency in Hz.
+        f_0 : float
+            Continuation scale in Hz (explicit, Decision D8 open).
+
+        Returns
+        -------
+        np.ndarray
+            1D array of inverse PSD weights 1 / S_n(f_k) for all bins where mask is True.
+        """
+        active_f = frequencies[mask]
+        psd_active = self.interpolate(active_f, f_start=f_start, f_0=f_0)
+        if np.any(psd_active <= 0):
+            raise ValueError("Active-bin PSD evaluated to non-positive value")
+        return 1.0 / psd_active
