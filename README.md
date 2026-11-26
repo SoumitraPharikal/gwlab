@@ -1,5 +1,7 @@
 # GWLab — Gravitational-Wave Matched Filtering & Bayesian Inference Laboratory
 
+**Author:** SOUMITRA PHARIKAL *(Independent Scientific Computing Project)*
+
 **GWLab** is a scientific web laboratory for exploring frequency-domain compact binary coalescence (CBC) waveforms, synthetic colored detector noise and Welch PSD estimation, matched filtering, and saved Bayesian nested-sampling parameter-estimation results.
 
 The application runs on a **Next.js `16.4.6` frontend** (`frontend/`) backed by a **FastAPI service** (`src/gwlab/api/`) over the deterministic **`gw_inference` scientific engine** (`src/gw_inference/`).
@@ -59,3 +61,17 @@ docker compose up --build
 - **Read-Only Posterior & Experiment Archives:** `/inference` displays saved weighted posterior samples from single-seed **Stage 6C Run A** (`seed 8101`). `/experiments` compares the saved **Stage 5G.2** two-seed sensitivity pair (`base_01_plug_inst_s1` vs `base_01_plug_inst_s2`), which is a sensitivity diagnostic (`|\Delta \ln Z| = 2.9720`, ratio `8.92`), **not** a convergence or frequentist coverage proof.
 - **Unexecuted / Frozen Campaigns:** `Stage 6C Run B` and `Seed 8301` remain unexecuted/proposed; `Model 3` (Student-t) remains frozen/specified and is not approved as production inference.
 - **No Live Sampling:** The web interface never launches nested samplers or recomputes Bayesian evidence.
+
+---
+
+## External Data Validation (GW150914)
+
+While the `517/517` repository test suite and interactive web application operate exclusively on synthetic data and saved benchmark archives, GWLab's conditioning, off-source Welch PSD, and `gw_inference.filter.matched_filter` pipeline were separately validated against **public GWOSC detector strain** for **GW150914** (`GWTC-1-confident`, GPS `1126259462.4`, 32 s `4096 Hz` H1 and L1 HDF5 files):
+
+- **Reproducible script:**
+  ```bash
+  python scripts/validate_gw150914_gwosc.py
+  ```
+- **Method:** DC removal, `15 Hz` zero-phase Butterworth high-pass, polyphase anti-alias downsampling (`4096 -> 2048 Hz`), off-source Welch PSD excluding the event window, and a fixed nonspinning TaylorF2 inspiral template ($m_1 = 35\,M_\odot$, $m_2 = 30\,M_\odot$, $f_{\mathrm{ISCO}} = 67.65\,\mathrm{Hz}$) over `[20, 512] Hz`.
+- **Observed Results:** `H1` peak SNR `8.94` at `+0.0718 s` (`GPS 1126259462.4718`) and `L1` peak SNR `5.55` at `+0.0610 s` (`GPS 1126259462.4610`). Because TaylorF2 terminates at $f_{\mathrm{ISCO}}$ and omits merger/ringdown, it recovers only the inspiral fraction of GW150914's full IMR signal power.
+- **Data Acknowledgement:** This validation uses public data from the Gravitational Wave Open Science Center ([gwosc.org](https://gwosc.org)), a service of LIGO Laboratory, the LIGO Scientific Collaboration, and the Virgo Collaboration.

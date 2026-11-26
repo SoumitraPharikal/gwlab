@@ -40,3 +40,6 @@ reports/*.aux
 reports/*.log
 reports/*.out
 reports/*.toc
+
+# Raw external GWOSC strain cache (re-downloadable via scripts/validate_gw150914_gwosc.py)
+data/gwosc_cache/

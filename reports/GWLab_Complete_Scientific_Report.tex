@@ -11,7 +11,11 @@
 \usepackage{enumitem}
 \usepackage{microtype}
 \usepackage{fancyhdr}
-\usepackage[hidelinks]{hyperref}
+\usepackage[hidelinks,
+    pdftitle={GWLab: Gravitational-Wave Matched Filtering and Bayesian Parameter-Estimation Laboratory},
+    pdfauthor={SOUMITRA PHARIKAL},
+    pdfsubject={Gravitational-Wave Data Analysis, Matched Filtering, Bayesian Inference, GW150914 Validation}
+]{hyperref}
 
 \sloppy
 
@@ -33,7 +37,8 @@
     {\Large\textbf{GWLab: Gravitational-Wave Matched Filtering and Bayesian Parameter-Estimation Laboratory}}\\[0.6em]
     {\large A Complete Mathematical, Algorithmic, and Software Monograph}
 }
-\author{GWLab Project}
+\author{\textbf{SOUMITRA PHARIKAL}\\[0.25em]
+\normalsize Independent Scientific Computing Project}
 \date{November 26, 2026}
 
 \begin{document}
@@ -44,7 +49,7 @@
 \begin{abstract}
 \textbf{GWLab} is a reproducible scientific computing and interactive web laboratory for compact binary coalescence (CBC) gravitational-wave signal modeling, noise spectral estimation, matched filtering, and Bayesian nested-sampling parameter estimation. This monograph develops the complete mathematical and algorithmic foundations of the system from first principles for readers familiar with undergraduate physics and mathematics. Starting from binary inspiral dynamics and the stationary-phase \texttt{TaylorF2} $3.5\mathrm{PN}$ frequency-domain waveform, we derive the discrete Fourier and one-sided power spectral density (PSD) conventions, synthetic colored Gaussian noise generation, Welch periodogram estimation with overlap-variance inflation, the noise-weighted inner product and matched-filter signal-to-noise ratio (SNR), the normalized active-band Whittle Gaussian log-likelihood, and nested-sampling Bayesian inference including circular phase statistics.
 
-Every equation, physical constant, and post-Newtonian coefficient in this document is verified directly against the implemented Python scientific engine (\texttt{src/gw\_inference/}), the FastAPI service (\texttt{src/gwlab/api/}), and the Next.js~\texttt{16.4.6} frontend (\texttt{frontend/}). Under the frozen synthetic benchmark ($4.0\,\mathrm{s}$ segment at $2048\,\mathrm{Hz}$, active band $[20, 512]\,\mathrm{Hz}$, custom analytical aLIGO-like PSD proxy), the matched filter achieves optimal template SNR $\rho_{\mathrm{opt}} = 45.3153$, the saved synthetic benchmark posterior (random seed $8101$) yields $\ln Z = 201646.1413 \pm 0.2374\,\mathrm{nats}$ across $11{,}951$ weighted samples (with $38.57\%$ of posterior mass in the upper $1\%$ of the symmetric-mass-ratio prior and circular coalescence-phase mean $\bar{\phi}_c = 0.0538\,\mathrm{rad}$, $\bar{R} = 0.6991$), and the two-seed evidence sensitivity comparison ($8101$ vs.\ $8201$) records $|\Delta \ln Z| = 2.9720\,\mathrm{nats}$ (ratio $8.92$). All scientific qualifications, software architecture boundaries, and validation results ($517/517$ backend tests, $86\%$ \texttt{src/gwlab/} coverage, $21/21$ Playwright checks) are documented alongside explicit reproducibility and provenance tables.
+Every equation, physical constant, and post-Newtonian coefficient in this document is verified directly against the implemented Python scientific engine (\texttt{src/gw\_inference/}), the FastAPI service (\texttt{src/gwlab/api/}), and the Next.js~\texttt{16.4.6} frontend (\texttt{frontend/}). Under the frozen synthetic benchmark ($4.0\,\mathrm{s}$ segment at $2048\,\mathrm{Hz}$, active band $[20, 512]\,\mathrm{Hz}$, custom analytical aLIGO-like PSD proxy), the matched filter achieves optimal template SNR $\rho_{\mathrm{opt}} = 45.3153$, the saved synthetic benchmark posterior (random seed $8101$) yields $\ln Z = 201646.1413 \pm 0.2374\,\mathrm{nats}$ across $11{,}951$ weighted samples (with $38.57\%$ of posterior mass in the upper $1\%$ of the symmetric-mass-ratio prior and circular coalescence-phase mean $\bar{\phi}_c = 0.0538\,\mathrm{rad}$, $\bar{R} = 0.6991$), and the two-seed evidence sensitivity comparison ($8101$ vs.\ $8201$) records $|\Delta \ln Z| = 2.9720\,\mathrm{nats}$ (ratio $8.92$). All scientific qualifications, software architecture boundaries, and validation results ($517/517$ synthetic backend tests, $86\%$ \texttt{src/gwlab/} coverage, $21/21$ Playwright checks) are documented alongside an independent external-data validation on public GWOSC \textbf{GW150914} H1/L1 strain ($32\,\mathrm{s}$, $4096\,\mathrm{Hz}$ downsampled to $2048\,\mathrm{Hz}$), where an untuned nonspinning \texttt{TaylorF2} inspiral template recovers coherent matched-filter peaks near the catalog GPS time ($8.94$ in H1 at $+71.8\,\mathrm{ms}$ and $5.55$ in L1 at $+61.0\,\mathrm{ms}$).
 \end{abstract}
 
 \tableofcontents
@@ -432,6 +437,73 @@ Figure~\ref{fig:two_seed} compares two independent-seed runs under identical mod
 \textbf{Qualification:} This ratio reflects internal sampler uncertainty reporting under $1$ degree of freedom; it is a sensitivity diagnostic, \emph{not} a calibrated frequentist significance, convergence proof, or coverage validation. Additional proposed runs (Run~B and seed~$8301$) remain unexecuted.
 
 %==============================================================================
+\chapter{Validation on Public GWOSC Detector Data}
+%==============================================================================
+
+\section{Real Strain Data and Current Repository Scope}
+All $517$ repository tests and all interactive web endpoints in GWLab operate exclusively on deterministic synthetic data and saved benchmark archives. Passing software tests validate internal mathematical consistency, not performance on physical interferometer strain. To bridge this gap without modifying the frozen synthetic benchmark API, a dedicated external-data validation adapter (\path{scripts/validate_gw150914_gwosc.py}) was implemented to ingest public Gravitational Wave Open Science Center (GWOSC) strain for \textbf{GW150914} (\texttt{GWTC-1-confident}, catalog GPS $1126259462.4$).
+
+\section{Public Data Selection, Integrity, and Quality Flags}
+Two official $32\,\mathrm{s}$, $4096\,\mathrm{Hz}$ HDF5 strain files starting at GPS $1126259447$ (UTC \texttt{2015-09-14T09:50:30}) were retrieved from the GWOSC v3 event API:
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{H1:} \path{H-H1_GWOSC_4KHZ_R1-1126259447-32.hdf5} ($1{,}040{,}781\,\mathrm{bytes}$, SHA-256 prefix \texttt{c5ea87beced5094b}, $131{,}072$ finite samples, \texttt{DQmask = 127} across all $32\,\mathrm{s}$).
+    \item \textbf{L1:} \path{L-L1_GWOSC_4KHZ_R1-1126259447-32.hdf5} ($1{,}007{,}262\,\mathrm{bytes}$, SHA-256 prefix \texttt{9d65bde82f7ec035}, $131{,}072$ finite samples, \texttt{DQmask = 127} across all $32\,\mathrm{s}$).
+\end{itemize}
+
+\section{Conditioning and Off-Source Welch PSD Estimation}
+Raw interferometer strain exhibits strong sub-$15\,\mathrm{Hz}$ seismic drift and non-zero DC offsets (for example, L1 raw strain spans $[-1.87, -0.046]\times 10^{-18}$). Each $32\,\mathrm{s}$ time series is conditioned by: (1) subtracting the full-stretch mean; (2) applying a zero-phase $4$th-order Butterworth high-pass filter at $15\,\mathrm{Hz}$; and (3) applying polyphase FIR anti-alias filtering and downsampling from $4096\,\mathrm{Hz}$ to $2048\,\mathrm{Hz}$ ($65{,}536$ samples). Filter edge regions ($[0, 1]\,\mathrm{s}$ and $[31, 32]\,\mathrm{s}$) are excluded from all subsequent analysis. Figure~\ref{fig:gw150914_strain} shows the conditioned strain around the event.
+
+To avoid fitting the event signal itself, the PSD is estimated strictly from off-source intervals $[1, 13]\,\mathrm{s}$ (pre-event) and $[18, 30]\,\mathrm{s}$ (post-event), excluding a $5\,\mathrm{s}$ guard around $t_{\mathrm{rel}} = 15.4\,\mathrm{s}$, using \texttt{gw\_inference.psd.welch\_psd} with $4.0\,\mathrm{s}$ Tukey-windowed ($\alpha=0.25$) segments at $50\%$ overlap. Figure~\ref{fig:gw150914_psd} shows the resulting off-source ASDs, highlighting narrowband instrumental lines ($60\,\mathrm{Hz}$ mains, violin modes near $300\,\mathrm{Hz}$) and the steep low-frequency seismic wall absent from the smooth synthetic \texttt{aligo\_representative} proxy. Whitening the $[25, 350]\,\mathrm{Hz}$ band clearly reveals the GW150914 chirp pulse in both detectors (Figure~\ref{fig:gw150914_whitened}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\textwidth]{figures/gw150914_external/fig_gw150914_strain.pdf}
+    \caption{Conditioned H1 and L1 GWOSC strain ($15\,\mathrm{Hz}$ high-pass, $2048\,\mathrm{Hz}$) around GW150914 (GPS $1126259462.4$).}
+    \label{fig:gw150914_strain}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\textwidth]{figures/gw150914_external/fig_gw150914_psd_asd.pdf}
+    \caption{Off-source Welch ASDs $\sqrt{S_n(f)}$ for H1 and L1 estimated strictly outside the GW150914 event window, showing real O1 spectral lines and low-frequency seismic noise.}
+    \label{fig:gw150914_psd}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\textwidth]{figures/gw150914_external/fig_gw150914_whitened.pdf}
+    \caption{Whitened H1 and L1 strain ($[25, 350]\,\mathrm{Hz}$) revealing the coherent GW150914 chirp waveform near $t_{\mathrm{rel}} = 0\,\mathrm{s}$.}
+    \label{fig:gw150914_whitened}
+\end{figure}
+
+\section{Matched-Filter Search, Results, and TaylorF2 Limitations}
+An untuned, representative nonspinning \texttt{TaylorF2} inspiral template ($m_1 = 35.0\,M_\odot$, $m_2 = 30.0\,M_\odot$, $\mathcal{M}_c = 28.19\,M_\odot$, $\eta = 0.2485$, $f_{\mathrm{ISCO}} = 67.65\,\mathrm{Hz}$) was evaluated over $[20, 512]\,\mathrm{Hz}$ on a $4.0\,\mathrm{s}$ Tukey-windowed ($\alpha=0.1$) on-source segment centered on GW150914 using \texttt{gw\_inference.filter.matched\_filter}.
+
+As shown in Figures~\ref{fig:gw150914_snr} and~\ref{fig:gw150914_comp}, the untuned inspiral template recovers coherent SNR peaks in both detectors:
+\begin{itemize}[leftmargin=1.5em]
+    \item \textbf{LIGO Hanford (H1):} Peak SNR $|\rho| = 8.94$ at $+71.8\,\mathrm{ms}$ relative to catalog GPS ($1126259462.4718$).
+    \item \textbf{LIGO Livingston (L1):} Peak SNR $|\rho| = 5.55$ at $+61.0\,\mathrm{ms}$ relative to catalog GPS ($1126259462.4610$).
+\end{itemize}
+Both peaks align within the physical $\sim 10\,\mathrm{ms}$ inter-site light-travel window. Crucially, the recovered inspiral SNRs ($8.94$ and $5.55$) are smaller than LIGO's full inspiral--merger--ringdown (IMR) network SNR ($\sim 24$) because \texttt{TaylorF2} terminates at $f_{\mathrm{ISCO}} = 67.65\,\mathrm{Hz}$: for a $\sim 65\,M_\odot$ binary in O1 noise, most signal power in the sensitive $[68, 250]\,\mathrm{Hz}$ band comes from the plunge, merger, and ringdown omitted by a nonspinning inspiral-only approximant.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\textwidth]{figures/gw150914_external/fig_gw150914_snr.pdf}
+    \caption{Matched-filter SNR $|\rho(t)|$ on public GWOSC GW150914 data using an untuned \texttt{TaylorF2} inspiral template ($35 + 30\,M_\odot$, $f_{\mathrm{ISCO}} = 67.65\,\mathrm{Hz}$).}
+    \label{fig:gw150914_snr}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.90\textwidth]{figures/gw150914_external/fig_gw150914_detector_comparison.pdf}
+    \caption{Comparison of H1 and L1 peak \texttt{TaylorF2} inspiral SNR and timing offset relative to the GW150914 catalog GPS.}
+    \label{fig:gw150914_comp}
+\end{figure}
+
+\section{Data Acknowledgement}
+This validation uses data obtained from the Gravitational Wave Open Science Center (\url{https://gwosc.org}), a service of LIGO Laboratory, the LIGO Scientific Collaboration, and the Virgo Collaboration. LIGO was constructed by the California Institute of Technology and Massachusetts Institute of Technology with funding from the National Science Foundation.
+
+%==============================================================================
 \chapter{Validation, Reproducibility, and Deployment Status}
 %==============================================================================
 
@@ -471,7 +543,7 @@ Table~\ref{tab:validation_summary} summarizes the verification status across the
 \end{enumerate}
 
 \section{Conclusion}
-GWLab delivers a unified, mathematically audited gravitational-wave analysis laboratory connecting post-Newtonian waveform physics, colored-noise Welch estimation, matched filtering, normalized Whittle likelihoods, and nested-sampling posterior forensics within a validated Next.js + FastAPI architecture.
+GWLab delivers a unified, mathematically audited gravitational-wave analysis laboratory connecting post-Newtonian waveform physics, colored-noise Welch estimation, matched filtering, normalized Whittle likelihoods, and nested-sampling posterior forensics within a validated Next.js + FastAPI architecture, supplemented by reproducible external validation on public GWOSC GW150914 detector strain.
 
 \appendix
 
