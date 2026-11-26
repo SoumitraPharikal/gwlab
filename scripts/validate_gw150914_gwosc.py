@@ -78,11 +78,16 @@ def load_and_condition_strain(path: pathlib.Path, fs_target: float = 2048.0) -> 
         duration = float(f["meta"]["Duration"][()])
         utc_start = f["meta"]["UTCstart"][()].decode() if isinstance(f["meta"]["UTCstart"][()], bytes) else str(f["meta"]["UTCstart"][()])
         dq_mask = np.asarray(f["quality"]["simple"]["DQmask"][()], dtype=np.int64)
+        inj_mask = np.asarray(f["quality"]["injections"]["Injmask"][()], dtype=np.int64)
 
     if not np.all(np.isfinite(strain_raw)):
         raise ValueError(f"Non-finite samples in {path.name}")
-    if np.any(dq_mask <= 0):
-        raise ValueError(f"Data-quality mask failure in {path.name}")
+    # Bits 0..3: DATA, CBC_CAT1, CBC_CAT2, CBC_CAT3
+    if not np.all((dq_mask & 0b0001111) == 0b0001111):
+        raise ValueError(f"CBC data-quality bits (DATA, CBC_CAT1..3) not all set in {path.name}")
+    # Bits 0..1: NO_CBC_HW_INJ, NO_BURST_HW_INJ
+    if not np.all((inj_mask & 0b00011) == 0b00011):
+        raise ValueError(f"Hardware CBC/Burst injection flag active in {path.name}")
 
     # 1. Remove DC offset
     demeaned = strain_raw - np.mean(strain_raw)
@@ -108,6 +113,8 @@ def load_and_condition_strain(path: pathlib.Path, fs_target: float = 2048.0) -> 
         "n_samples_conditioned": int(conditioned.size),
         "dq_mask_min": int(np.min(dq_mask)),
         "dq_mask_max": int(np.max(dq_mask)),
+        "inj_mask_min": int(np.min(inj_mask)),
+        "inj_mask_max": int(np.max(inj_mask)),
     }
     return conditioned, meta
 

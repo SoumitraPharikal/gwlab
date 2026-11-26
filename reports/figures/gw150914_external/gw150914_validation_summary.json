@@ -28,7 +28,9 @@
         "n_samples_raw": 131072,
         "n_samples_conditioned": 65536,
         "dq_mask_min": 127,
-        "dq_mask_max": 127
+        "dq_mask_max": 127,
+        "inj_mask_min": 31,
+        "inj_mask_max": 31
       },
       "peak_snr": 8.937598051259881,
       "peak_offset_from_event_s": 0.07177734375,
@@ -48,7 +50,9 @@
         "n_samples_raw": 131072,
         "n_samples_conditioned": 65536,
         "dq_mask_min": 127,
-        "dq_mask_max": 127
+        "dq_mask_max": 127,
+        "inj_mask_min": 23,
+        "inj_mask_max": 23
       },
       "peak_snr": 5.545914334982036,
       "peak_offset_from_event_s": 0.06103515625,

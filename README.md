@@ -72,6 +72,6 @@ While the `517/517` repository test suite and interactive web application operat
   ```bash
   python scripts/validate_gw150914_gwosc.py
   ```
-- **Method:** DC removal, `15 Hz` zero-phase Butterworth high-pass, polyphase anti-alias downsampling (`4096 -> 2048 Hz`), off-source Welch PSD excluding the event window, and a fixed nonspinning TaylorF2 inspiral template ($m_1 = 35\,M_\odot$, $m_2 = 30\,M_\odot$, $f_{\mathrm{ISCO}} = 67.65\,\mathrm{Hz}$) over `[20, 512] Hz`.
+- **Method:** DC removal, `15 Hz` zero-phase Butterworth high-pass, polyphase anti-alias downsampling (`4096 -> 2048 Hz`), off-source Welch PSD excluding the event window, and a **fixed, non-optimized inspiral template applied to a known event** (TaylorF2 $m_1 = 35\,M_\odot$, $m_2 = 30\,M_\odot$, $f_{\mathrm{ISCO}} = 67.65\,\mathrm{Hz}$) over `[20, 512] Hz`. Full Bayesian parameter-estimation or population generalization validation on real detector data has not been performed.
 - **Observed Results:** `H1` peak SNR `8.94` at `+0.0718 s` (`GPS 1126259462.4718`) and `L1` peak SNR `5.55` at `+0.0610 s` (`GPS 1126259462.4610`). Because TaylorF2 terminates at $f_{\mathrm{ISCO}}$ and omits merger/ringdown, it recovers only the inspiral fraction of GW150914's full IMR signal power.
 - **Data Acknowledgement:** This validation uses public data from the Gravitational Wave Open Science Center ([gwosc.org](https://gwosc.org)), a service of LIGO Laboratory, the LIGO Scientific Collaboration, and the Virgo Collaboration.
