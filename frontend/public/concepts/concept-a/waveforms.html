@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concept A — Waveforms (Scientific Journal) | GWLab</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <script src="../shared/waveforms-data.js"></script>
+  <script src="../shared/scripts.js"></script>
+  <style>
+    :root, [data-theme="light"] {
+      --background: #FBF9F5;
+      --surface: #FFFFFF;
+      --surface-subtle: #F3EFE7;
+      --border: #DCD6C9;
+      --border-subtle: #EBE6DC;
+      --foreground: #1A1B1E;
+      --foreground-secondary: #484B52;
+      --muted: #6B6F78;
+      --muted-light: #8E939E;
+      --accent: #8C2D19;
+      --accent-subtle: #F8EFEA;
+      --accent-border: #D8988A;
+      --plate-bg: #FFFFFF;
+      --plate-border: #DCD6C9;
+    }
+    [data-theme="dark"] {
+      --background: #111215;
+      --surface: #17191E;
+      --surface-subtle: #1D2027;
+      --border: #2C303A;
+      --border-subtle: #21252D;
+      --foreground: #EDEDEA;
+      --foreground-secondary: #A0A5AF;
+      --muted: #7A808C;
+      --muted-light: #5A606C;
+      --accent: #D85838;
+      --accent-subtle: #261611;
+      --accent-border: #6B2918;
+      --plate-bg: #17191E;
+      --plate-border: #2C303A;
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+    }
+
+    /* Journal Folio Running Header */
+    .journal-masthead {
+      border-bottom: 2px solid var(--foreground);
+      padding: 0.6rem 1.5rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface);
+    }
+    .journal-subhead {
+      border-bottom: 1px solid var(--border);
+      padding: 0.4rem 1.5rem;
+      font-size: 0.68rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      background: var(--surface-subtle);
+    }
+
+    /* Article Navigation */
+    .journal-nav {
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1.5rem;
+      background: var(--surface);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+    .nav-links {
+      display: flex;
+      gap: 1.25rem;
+      list-style: none;
+      font-size: 0.82rem;
+    }
+    .nav-links a {
+      color: var(--foreground-secondary);
+      text-decoration: none;
+      padding: 0.2rem 0;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s ease;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 500;
+    }
+
+    .journal-grid {
+      max-width: 1280px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: minmax(0, 4.5fr) minmax(0, 7.5fr);
+      gap: 3rem;
+    }
+
+    @media (max-width: 960px) {
+      .journal-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .journal-masthead, .journal-subhead, .journal-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.35rem;
+        padding: 0.6rem 1rem;
+      }
+      .nav-links {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+      .article-title {
+        font-size: 1.85rem;
+      }
+      .journal-grid {
+        padding: 0 1rem;
+      }
+    }
+
+    .article-title {
+      font-family: 'Newsreader', serif;
+      font-size: 2.25rem;
+      font-weight: 400;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+    .article-subtitle {
+      font-family: 'Newsreader', serif;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      line-height: 1.4;
+    }
+
+    /* Scholarly Figure Plate */
+    .figure-plate {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .figure-header {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.4rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .figure-caption {
+      font-size: 0.78rem;
+      line-height: 1.5;
+      color: var(--foreground-secondary);
+      margin-top: 0.75rem;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 0.6rem;
+    }
+    .figure-caption strong {
+      color: var(--foreground);
+      font-family: 'Newsreader', serif;
+      font-size: 0.85rem;
+    }
+    .figure-notice {
+      display: inline-block;
+      margin-top: 0.4rem;
+      padding: 0.2rem 0.5rem;
+      background: var(--accent-subtle);
+      border: 1px solid var(--accent-border);
+      color: var(--accent);
+      font-size: 0.7rem;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .academic-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      margin: 1rem 0;
+    }
+    .academic-table th {
+      border-top: 1px solid var(--foreground);
+      border-bottom: 1px solid var(--foreground);
+      text-align: left;
+      padding: 0.5rem 0.25rem;
+      font-family: 'Newsreader', serif;
+      font-weight: 500;
+    }
+    .academic-table td {
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.45rem 0.25rem;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .academic-table td:last-child {
+      text-align: right;
+    }
+
+    .sidenote {
+      font-size: 0.78rem;
+      line-height: 1.5;
+      color: var(--muted);
+      border-left: 2px solid var(--border);
+      padding-left: 0.75rem;
+      margin: 1.25rem 0;
+    }
+    .sidenote strong {
+      color: var(--foreground);
+    }
+
+    .btn-academic {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--foreground);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-family: 'IBM Plex Sans', sans-serif;
+      transition: all 0.15s ease;
+    }
+    .btn-academic:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Journal Running Masthead -->
+  <header class="journal-masthead">
+    <div>
+      <span class="font-serif" style="font-weight: 600; font-size: 0.95rem;">GWLab</span>
+      <span style="margin: 0 0.5rem; opacity: 0.5;">|</span>
+      <span>Laboratory for Gravitational-Wave Signal Inference &amp; Estimation</span>
+    </div>
+    <div style="font-family: 'IBM Plex Mono', monospace;">
+      <span>GWLab Monograph Series</span>
+      <span style="margin: 0 0.5rem; opacity: 0.5;">&middot;</span>
+      <span>Technical Report 2026-01</span>
+    </div>
+  </header>
+
+  <div class="journal-subhead">
+    <div>DOCUMENT REF: GWLab · Technical Notes · 2026 &middot; SECTION II: TAYLORF2 WAVEFORM SYNTHESIS &amp; CHIRP DYNAMICS</div>
+    <div>MODEL SPECIFICATION: POST-NEWTONIAN 3.5PN INSPIRAL EXPANSION &middot; SCHWARZSCHILD ISCO TERMINATION</div>
+  </div>
+
+  <!-- Article Navigation -->
+  <nav class="journal-nav" aria-label="Scientific article sections">
+    <ul class="nav-links">
+      <li><a href="index.html">&larr; I. Abstract &amp; Overview</a></li>
+      <li><a href="waveforms.html" class="active">II. Waveforms (TaylorF2)</a></li>
+      <li><a href="#plate2">Plate II.1: Spectrum</a></li>
+      <li><a href="#plate3">Plate II.2: Chirp Time</a></li>
+      <li><a href="../comparison.html" style="color: var(--muted); border-bottom: none;">&larr; Concepts Comparison</a></li>
+    </ul>
+
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted);">DETERMINISTIC PHYSICS ENGINE</span>
+      <button class="theme-toggle-btn btn-academic" onclick="toggleTheme()" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+        <span class="theme-icon">🌙</span> Theme
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Grid -->
+  <main class="journal-grid">
+    <!-- Left Column: Parameters and Formal Derivations -->
+    <aside>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--accent); text-transform: uppercase; margin-bottom: 0.4rem;">
+        Stationary-Phase Approximation Specimen
+      </div>
+      <h2 style="font-family: 'Newsreader', serif; font-size: 1.4rem; color: var(--foreground); margin-bottom: 0.75rem;">
+        Benchmark Injected Coordinates
+      </h2>
+      <p style="font-size: 0.85rem; line-height: 1.6; color: var(--foreground-secondary); margin-bottom: 1rem;">
+        The benchmark binary configuration corresponds to the verified Stage 6C injection parameters:
+      </p>
+
+      <table class="academic-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Notation</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Chirp mass</td>
+            <td>$\mathcal{M}_c$</td>
+            <td>28.0956 M_sun</td>
+          </tr>
+          <tr>
+            <td>Symmetric mass ratio</td>
+            <td>$\eta$</td>
+            <td>0.2471</td>
+          </tr>
+          <tr>
+            <td>Luminosity distance</td>
+            <td>$d_L$</td>
+            <td>410.0 Mpc</td>
+          </tr>
+          <tr>
+            <td>Primary component mass</td>
+            <td>$m_1$</td>
+            <td>36.00 M_sun</td>
+          </tr>
+          <tr>
+            <td>Secondary component mass</td>
+            <td>$m_2$</td>
+            <td>29.00 M_sun</td>
+          </tr>
+          <tr>
+            <td>Total binary mass</td>
+            <td>$M$</td>
+            <td>65.00 M_sun</td>
+          </tr>
+          <tr>
+            <td>Mass ratio ($m_1/m_2$)</td>
+            <td>$q$</td>
+            <td>1.241</td>
+          </tr>
+          <tr>
+            <td>ISCO cutoff frequency</td>
+            <td>$f_{\text{ISCO}}$</td>
+            <td>67.65 Hz</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="sidenote">
+        <strong>Mathematical Note 2.1 (PN Expansion Order):</strong>
+        The Fourier phase incorporates post-Newtonian coefficients up to order $v^7 / c^7$ (3.5PN).
+        Logarithmic phase terms $\propto \ln v$ enter at 2.5PN ($\alpha_5$) and 3.0PN ($\alpha_6$), governing
+        orbital energy loss into the gravitational-wave field prior to plunge.
+      </div>
+
+      <div class="sidenote">
+        <strong>Mathematical Note 2.2 (Newtonian Chirp Time):</strong>
+        The instantaneous time to coalescence $\tau_0(f) = t_c - t(f)$ in the leading-order Newtonian quadrupole approximation scales as:
+        $$\tau_0(f) = \frac{5}{256}\left(\frac{G\mathcal{M}_c}{c^3}\right)^{-5/3}(\pi f)^{-8/3}$$
+        Relativistic 3.5PN corrections decelerate this interval near ISCO, as illustrated in Plate II.2.
+      </div>
+    </aside>
+
+    <!-- Right Column: Scientific Plates -->
+    <section>
+      <h1 class="article-title">Section II &mdash; TaylorF2 Strain Synthesis</h1>
+      <p class="article-subtitle">
+        Frequency-domain representation of non-spinning inspirals in the stationary-phase approximation.
+      </p>
+
+      <!-- Plate II.1: Strain Amplitude Spectrum -->
+      <div id="plate2" class="figure-plate">
+        <div class="figure-header">
+          <span>PLATE II.1 &middot; FREQUENCY-DOMAIN STRAIN SPECTRUM</span>
+          <span>LOG-LOG REPRESENTATION</span>
+        </div>
+
+        <svg viewBox="0 0 640 320" style="width: 100%; height: auto; background: var(--surface-subtle); border: 1px solid var(--border-subtle);">
+          <defs>
+            <pattern id="grid-p2" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--border-subtle)" stroke-width="0.75" stroke-dasharray="1 3"/>
+            </pattern>
+          </defs>
+          <rect width="640" height="320" fill="url(#grid-p2)" />
+
+          <!-- Axes: Margins 65 left, 30 top, 530 width, 250 height -->
+          <line x1="65" y1="280" x2="595" y2="280" stroke="var(--foreground)" stroke-width="1.2" />
+          <line x1="65" y1="30" x2="65" y2="280" stroke="var(--foreground)" stroke-width="1.2" />
+
+          <!-- Frequency Ticks -->
+          <line x1="65" y1="280" x2="65" y2="286" stroke="var(--foreground)" stroke-width="1" />
+          <text x="65" y="300" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--muted)">20</text>
+
+          <line x1="200" y1="280" x2="200" y2="286" stroke="var(--foreground)" stroke-width="1" />
+          <text x="200" y="300" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--muted)">30</text>
+
+          <line x1="360" y1="280" x2="360" y2="286" stroke="var(--foreground)" stroke-width="1" />
+          <text x="360" y="300" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--muted)">50</text>
+
+          <!-- Cutoff ISCO Line -->
+          <line x1="475" y1="30" x2="475" y2="280" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="3 3" />
+          <text x="475" y="24" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--accent)" font-weight="600">f_ISCO = 67.6 Hz</text>
+
+          <!-- Amplitude Ticks -->
+          <text x="57" y="265" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="end" fill="var(--muted)">10⁻²³</text>
+          <line x1="60" y1="262" x2="65" y2="262" stroke="var(--foreground)" stroke-width="1" />
+
+          <text x="57" y="185" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="end" fill="var(--muted)">10⁻²²</text>
+          <line x1="60" y1="182" x2="65" y2="182" stroke="var(--foreground)" stroke-width="1" />
+
+          <text x="57" y="105" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="end" fill="var(--muted)">10⁻²¹</text>
+          <line x1="60" y1="102" x2="65" y2="102" stroke="var(--foreground)" stroke-width="1" />
+
+          <text x="57" y="45" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="end" fill="var(--muted)">10⁻²⁰</text>
+          <line x1="60" y1="42" x2="65" y2="42" stroke="var(--foreground)" stroke-width="1" />
+
+          <!-- Real TaylorF2 Power Law Strain Curve -->
+          <path d="M 65 52 L 120 90 L 190 135 L 280 185 L 380 230 L 475 265" 
+                fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" />
+
+          <!-- Axis Titles -->
+          <text x="330" y="316" font-family="'Newsreader', serif" font-size="11" text-anchor="middle" fill="var(--foreground)">
+            Frequency f (Hz)
+          </text>
+          <text x="-155" y="18" transform="rotate(-90)" font-family="'Newsreader', serif" font-size="11" text-anchor="middle" fill="var(--foreground)">
+            Fourier Strain |h~(f)| (strain/Hz or s)
+          </text>
+        </svg>
+
+        <div class="figure-caption">
+          <strong>Figure 2.1 &mdash; Stationary-Phase Inspiral Spectrum $|\tilde{h}(f)|$.</strong>
+          Evaluated for the canonical binary benchmark ($M_c = 28.1\,M_\odot, \eta = 0.247, d_L = 410\,\text{Mpc}$)
+          governed by the quadrupolar radiation reaction.
+          <br>
+          <span class="figure-notice">
+            MODEL WAVEFORM &middot; DETERMINISTIC SPA EVALUATION &middot; NOT DETECTOR DATA
+          </span>
+        </div>
+      </div>
+
+      <!-- Plate II.2: Chirp Time to Coalescence tau(f) -->
+      <div id="plate3" class="figure-plate">
+        <div class="figure-header">
+          <span>PLATE II.2 &middot; TIME TO COALESCENCE &tau;(f) = t_c &minus; t(f)</span>
+          <span>POST-NEWTONIAN DYNAMICS</span>
+        </div>
+
+        <svg viewBox="0 0 640 280" style="width: 100%; height: auto; background: var(--surface-subtle); border: 1px solid var(--border-subtle);">
+          <rect width="640" height="280" fill="url(#grid-p2)" />
+
+          <!-- Axes -->
+          <line x1="65" y1="240" x2="595" y2="240" stroke="var(--foreground)" stroke-width="1.2" />
+          <line x1="65" y1="25" x2="65" y2="240" stroke="var(--foreground)" stroke-width="1.2" />
+
+          <!-- Ticks -->
+          <line x1="65" y1="240" x2="65" y2="246" stroke="var(--foreground)" stroke-width="1" />
+          <text x="65" y="258" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--muted)">20</text>
+
+          <line x1="200" y1="240" x2="200" y2="246" stroke="var(--foreground)" stroke-width="1" />
+          <text x="200" y="258" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--muted)">30</text>
+
+          <line x1="360" y1="240" x2="360" y2="246" stroke="var(--foreground)" stroke-width="1" />
+          <text x="360" y="258" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--muted)">50</text>
+
+          <line x1="475" y1="25" x2="475" y2="240" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="3 3" />
+          <text x="475" y="18" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--accent)">f_ISCO</text>
+
+          <!-- Time Ticks -->
+          <text x="57" y="243" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="end" fill="var(--muted)">0.0 s</text>
+          <text x="57" y="185" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="end" fill="var(--muted)">0.2 s</text>
+          <text x="57" y="125" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="end" fill="var(--muted)">0.4 s</text>
+          <text x="57" y="65" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="end" fill="var(--muted)">0.6 s</text>
+
+          <!-- Newtonian Chirp Time Curve (Dashed) -->
+          <path d="M 65 35 Q 150 170 475 235" 
+                fill="none" stroke="var(--foreground-secondary)" stroke-width="1.5" stroke-dasharray="4 3" />
+
+          <!-- 3.5PN Chirp Time Curve (Solid Terracotta) -->
+          <path d="M 65 38 Q 155 165 475 228" 
+                fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" />
+
+          <!-- Legend -->
+          <g transform="translate(420, 45)">
+            <rect width="165" height="50" fill="var(--surface)" stroke="var(--border)" rx="2" />
+            <line x1="15" y1="18" x2="45" y2="18" stroke="var(--accent)" stroke-width="2" />
+            <text x="55" y="21" font-family="'Newsreader', serif" font-size="10" fill="var(--foreground)">3.5PN Dynamics &tau;(f)</text>
+            <line x1="15" y1="35" x2="45" y2="35" stroke="var(--foreground-secondary)" stroke-width="1.5" stroke-dasharray="3 2" />
+            <text x="55" y="38" font-family="'Newsreader', serif" font-size="10" fill="var(--muted)">Newtonian &tau;₀(f)</text>
+          </g>
+
+          <text x="330" y="272" font-family="'Newsreader', serif" font-size="11" text-anchor="middle" fill="var(--foreground)">
+            Frequency f (Hz)
+          </text>
+        </svg>
+
+        <div class="figure-caption">
+          <strong>Figure 2.2 &mdash; Chirp Time to Coalescence $\tau(f) = t_c - t(f)$.</strong>
+          Comparison of the relativistic 3.5PN post-Newtonian frequency deceleration against the Newtonian quadrupole approximation,
+          demonstrating higher-order relativistic orbital drag near the ISCO plunge boundary.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer style="margin-top: auto; border-top: 1px solid var(--border); background: var(--surface); padding: 1.5rem; font-size: 0.75rem; color: var(--muted); text-align: center;">
+    GWLab Research Laboratory &middot; Concept A: Scientific Journal Archetype &middot; Preserving all underlying physical constants and artifacts
+  </footer>
+
+</body>
+</html>

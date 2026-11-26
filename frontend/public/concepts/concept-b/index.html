@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concept B — Instrument Laboratory | GWLab</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <script src="../shared/waveforms-data.js"></script>
+  <script src="../shared/scripts.js"></script>
+  <style>
+    :root, [data-theme="light"] {
+      --background: #EEF0F3;
+      --surface: #F8F9FA;
+      --surface-subtle: #E5E8ED;
+      --border: #C8CDD5;
+      --border-subtle: #DCE0E6;
+      --foreground: #14171B;
+      --foreground-secondary: #454D5A;
+      --muted: #677180;
+      --muted-light: #8E98A5;
+      --accent: #C44D18;
+      --accent-subtle: #FBEFE9;
+      --accent-border: #DFA78D;
+      --crt-grid: rgba(20, 23, 27, 0.08);
+      --beam-color: #C44D18;
+    }
+    [data-theme="dark"] {
+      --background: #0A0C0F;
+      --surface: #12151B;
+      --surface-subtle: #191E26;
+      --border: #252C37;
+      --border-subtle: #1D232C;
+      --foreground: #E2E6EC;
+      --foreground-secondary: #8C96A5;
+      --muted: #6B7686;
+      --muted-light: #4A5462;
+      --accent: #FF6A28;
+      --accent-subtle: #2A170E;
+      --accent-border: #7A3314;
+      --crt-grid: rgba(255, 255, 255, 0.06);
+      --beam-color: #FF6A28;
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+    }
+
+    /* Instrument Telemetry Bus */
+    .telemetry-bus {
+      background: var(--surface-subtle);
+      border-bottom: 1px solid var(--border);
+      padding: 0.4rem 1rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.75rem;
+      color: var(--foreground-secondary);
+    }
+
+    /* Console Command Nav */
+    .console-nav {
+      background: var(--surface);
+      border-bottom: 2px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .rack-id {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .rack-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      list-style: none;
+    }
+
+    @media (max-width: 900px) {
+      .console-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+      .telemetry-bus {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.4rem;
+      }
+    }
+    .rack-links a {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--foreground-secondary);
+      text-decoration: none;
+      padding: 0.35rem 0.65rem;
+      border: 1px solid transparent;
+      border-radius: 2px;
+      transition: all 0.15s ease;
+    }
+    .rack-links a:hover {
+      background: var(--surface-subtle);
+      border-color: var(--border);
+      color: var(--foreground);
+    }
+    .rack-links a.active {
+      background: var(--surface-subtle);
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Main Console Workspace */
+    .console-layout {
+      max-width: 1360px;
+      margin: 1.5rem auto;
+      padding: 0 1rem;
+      display: grid;
+      grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 960px) {
+      .console-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Rack Bay Chassis */
+    .rack-bay {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .bay-header {
+      background: var(--surface-subtle);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .bay-body {
+      padding: 1rem;
+    }
+
+    /* CRT Scope Viewport */
+    .scope-viewport {
+      background: #06080A;
+      border: 1px solid var(--border);
+      position: relative;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .scope-overlay-header {
+      position: absolute;
+      top: 0.5rem;
+      left: 0.75rem;
+      right: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.6);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* Telemetry Dial Readout Card */
+    .telemetry-card {
+      border: 1px solid var(--border);
+      background: var(--surface-subtle);
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .telemetry-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .telemetry-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+    .telemetry-sub {
+      font-size: 0.72rem;
+      color: var(--foreground-secondary);
+      margin-top: 0.25rem;
+    }
+
+    .btn-console {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-weight: 500;
+      font-size: 0.8rem;
+      padding: 0.45rem 0.85rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--foreground);
+      text-decoration: none;
+      border-radius: 2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+    }
+    .btn-console:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-console-active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #FFFFFF;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Diagnostic Configuration Bus -->
+  <aside class="telemetry-bus" aria-label="Analysis diagnostic status bus">
+    <div>
+      <span>CONFIGURATION: SYNTHETIC REALIZATION 01 // 4.0s DURATION // fs = 2048 Hz // BAND: 20–512 Hz (ILLUSTRATIVE MODEL PARAMETERS)</span>
+    </div>
+    <div style="display: flex; gap: 1.25rem;">
+      <span>BENCHMARK ARCHIVE: FROZEN</span>
+      <span>MODEL: TAYLORF2 3.5PN (INSPIRAL ONLY)</span>
+      <span>CALLS: 487,407 / 1.2M</span>
+      <span>HISTORICAL LEDGER: 40.6%</span>
+    </div>
+  </aside>
+
+  <!-- Console Command Navigation Bar -->
+  <header class="console-nav">
+    <div class="rack-id">
+      <span style="color: var(--accent);">&#x25C8;</span>
+      <span>GWLab // Analysis Console</span>
+      <span style="font-size: 0.72rem; font-family: 'IBM Plex Mono', monospace; font-weight: 400; color: var(--muted); margin-left: 0.5rem;">[RACK_01]</span>
+    </div>
+
+    <nav aria-label="Console rack modules">
+      <ul class="rack-links">
+        <li><a href="index.html" class="active">[01_OVERVIEW]</a></li>
+        <li><a href="waveforms.html">[02_WAVEFORMS]</a></li>
+        <li><a href="waveforms.html#ch3">[03_PSD_WELCH]</a></li>
+        <li><a href="waveforms.html#ch4">[04_FILTERING]</a></li>
+        <li><a href="index.html#audit">[05_INFERENCE]</a></li>
+        <li><a href="../comparison.html" style="color: var(--muted); border-style: dashed;">[COMPARE_ALL]</a></li>
+      </ul>
+    </nav>
+
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <button class="theme-toggle-btn btn-console" onclick="toggleTheme()">
+        <span class="theme-icon">☀️</span> THEME
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Console Layout -->
+  <main class="console-layout">
+    <!-- Left Column: Oscilloscope & Spectrum Analyzer Bay (Dominant Screen) -->
+    <section class="rack-bay">
+      <div class="bay-header">
+        <span>PRIMARY SPECTRUM ANALYZER // SYNTHETIC REALIZATION 01 BENCHMARK</span>
+        <span style="color: var(--accent);">CH1: |h~(f)| &middot; TAYLORF2 3.5PN INSPIRAL</span>
+      </div>
+
+      <div class="bay-body">
+        <!-- CRT Oscilloscope Screen -->
+        <div class="scope-viewport">
+          <div class="scope-overlay-header">
+            <span>SPAN: 20.0–100.0 Hz</span>
+            <span style="color: var(--accent);">f_ISCO = 67.65 Hz [HEURISTIC CUTOFF]</span>
+            <span>V/DIV: 10 dB // COORD: LOG-LOG</span>
+          </div>
+
+          <svg id="scope-svg" viewBox="0 0 680 380" style="width: 100%; height: auto; display: block;">
+            <!-- CRT Reticle Grid -->
+            <defs>
+              <pattern id="crt-reticle" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--crt-grid)" stroke-width="0.8" />
+                <circle cx="20" cy="20" r="0.8" fill="var(--crt-grid)" />
+              </pattern>
+            </defs>
+            <rect width="680" height="380" fill="#07090C" />
+            <rect width="680" height="380" fill="url(#crt-reticle)" />
+
+            <!-- Frequency & Amplitude Calibration Lines -->
+            <!-- f_ISCO Marker Line -->
+            <line x1="490" y1="30" x2="490" y2="340" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="4 2" />
+            <text x="490" y="24" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--accent)">ISCO CUTOFF (67.65 Hz)</text>
+
+            <!-- Coordinate Axes Frame -->
+            <rect x="50" y="35" width="590" height="305" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1" />
+
+            <!-- Calibrated Ticks -->
+            <text x="50" y="358" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="rgba(255,255,255,0.5)">20 Hz</text>
+            <text x="180" y="358" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="rgba(255,255,255,0.5)">30 Hz</text>
+            <text x="350" y="358" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="rgba(255,255,255,0.5)">50 Hz</text>
+            <text x="490" y="358" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--accent)">67.6 Hz</text>
+
+            <text x="42" y="338" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="end" fill="rgba(255,255,255,0.5)">10⁻²³</text>
+            <text x="42" y="240" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="end" fill="rgba(255,255,255,0.5)">10⁻²²</text>
+            <text x="42" y="140" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="end" fill="rgba(255,255,255,0.5)">10⁻²¹</text>
+            <text x="42" y="55" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="end" fill="rgba(255,255,255,0.5)">10⁻²⁰</text>
+
+            <!-- Phosphor Beam Vector Strain Trace -->
+            <path d="M 50 60 L 115 105 L 205 160 L 320 220 L 440 280 L 490 305" 
+                  fill="none" stroke="var(--beam-color)" stroke-width="2.5" stroke-linecap="round" />
+
+            <!-- Beam Halo Effect -->
+            <path d="M 50 60 L 115 105 L 205 160 L 320 220 L 440 280 L 490 305" 
+                  fill="none" stroke="var(--beam-color)" stroke-width="6" opacity="0.15" stroke-linecap="round" />
+
+            <!-- Plunge Termination Marker -->
+            <circle cx="490" cy="305" r="4" fill="var(--accent)" stroke="#FFFFFF" stroke-width="1.5" />
+          </svg>
+        </div>
+
+        <!-- Technical Description & Model Notice -->
+        <div style="margin-top: 0.75rem; display: flex; justify-content: space-between; align-items: baseline; font-size: 0.72rem; font-family: 'IBM Plex Mono', monospace; color: var(--foreground-secondary);">
+          <span>MODEL: TAYLORF2 3.5PN INSPIRAL APPROXIMATION // Mc = 28.10 Msun // eta = 0.2471</span>
+          <span style="color: var(--accent); background: var(--accent-subtle); border: 1px solid var(--accent-border); padding: 0.15rem 0.4rem;">
+            THEORETICAL INSPIRAL MODEL // NOT RAW DETECTOR DATA
+          </span>
+        </div>
+
+        <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+          <a href="waveforms.html" class="btn-console btn-console-active">
+            &gt; LAUNCH WAVEFORM CHANNEL CONTROLLER
+          </a>
+          <a href="../comparison.html" class="btn-console">
+            &gt; BROWSE OTHER DESIGN CONCEPTS
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Telemetry Bay & Instrument Cards -->
+    <aside class="space-y-4">
+      <div class="rack-bay">
+        <div class="bay-header">
+          <span>BAY_02 // HISTORICAL BENCHMARK LEDGER</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--muted);">RECORDED STAGE 6D CLOSEOUT</span>
+        </div>
+
+        <div class="bay-body">
+          <!-- Metric 1: Log-Evidence -->
+          <div class="telemetry-card">
+            <div class="telemetry-label">
+              <span>MARGINAL EVIDENCE ln Z</span>
+              <span style="color: var(--accent);">STAGE 6C ANCHOR</span>
+            </div>
+            <div class="telemetry-val">201646.1413</div>
+            <div class="telemetry-sub">&plusmn; 0.2374 nats &middot; Model 2 Gaussian likelihood</div>
+          </div>
+
+          <!-- Metric 2: Repeatability Discrepancy -->
+          <div class="telemetry-card">
+            <div class="telemetry-label">
+              <span>2-SEED EVIDENCE DISCREPANCY</span>
+              <span>SEEDS 8101 vs 8201</span>
+            </div>
+            <div class="telemetry-val" style="color: var(--accent);">8.92 &sigma;</div>
+            <div class="telemetry-sub">|&Delta; ln Z| = 2.9720 nats / quadrature-combined reported error &sigma;_&Delta; = 0.3332 nats</div>
+          </div>
+
+          <!-- Metric 3: Resource Ledger -->
+          <div class="telemetry-card">
+            <div class="telemetry-label">
+              <span>EVALUATION LEDGER // CAP 1.2M</span>
+              <span>40.6% CONSUMED AT CLOSEOUT</span>
+            </div>
+            <div class="telemetry-val">487,407</div>
+            <div class="telemetry-sub">712,593 reserve &middot; Wall: 515.0 s &middot; CPU: 473.2 s (soft watchdogs)</div>
+          </div>
+
+          <!-- Metric 4: Boundary Concentration -->
+          <div class="telemetry-card" style="margin-bottom: 0;">
+            <div class="telemetry-label">
+              <span>&eta; BOUNDARY DENSITY</span>
+              <span>[&eta; &ge; 0.2485]</span>
+            </div>
+            <div class="telemetry-val">38.57%</div>
+            <div class="telemetry-sub">Posterior probability mass in top 1% equal-mass prior interval</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Provenance Box -->
+      <div class="rack-bay" id="audit">
+        <div class="bay-header">
+          <span>PROVENANCE REGISTRY</span>
+          <span>AUDITED</span>
+        </div>
+        <div class="bay-body" style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--foreground-secondary); line-height: 1.5;">
+          <div>ARTIFACT: <code>experiments/wp6_stage6c_anchor/run_a_anchor_result.json</code></div>
+          <div style="margin-top: 0.35rem;">SAMPLES: <code>run_a_anchor_samples.npz</code> (11,951 pts)</div>
+          <div style="margin-top: 0.35rem;">GOVERNANCE: ZERO SAMPLER DISPATCH IN UI</div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer style="border-top: 1px solid var(--border); background: var(--surface); padding: 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); text-align: center;">
+    GWLab Analysis Instrument // Concept B: Laboratory Console Architecture // Deterministic execution only
+  </footer>
+
+</body>
+</html>

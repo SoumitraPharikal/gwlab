@@ -1,0 +1,12 @@
+.git
+.pytest_cache
+.streamlit
+__pycache__
+*.pyc
+*.pyo
+.coverage
+htmlcov
+frontend/node_modules
+frontend/.next
+reports/screenshots
+concepts

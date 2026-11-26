@@ -165,8 +165,9 @@ def taylorf2_35pn_phase(
     m1_kg: float,
     m2_kg: float,
     phi_c: float = 0.0,
+    pn_order: float = 3.5,
 ) -> np.ndarray:
-    """Evaluate 3.5PN TaylorF2 Fourier phase Psi_{TF2}^+(f) at t_c = 0.
+    """Evaluate 3.5PN (or truncated 3.0PN) TaylorF2 Fourier phase Psi_{TF2}^+(f) at t_c = 0.
 
     Phase definition (Group C frozen convention):
         Psi_{TF2}^+(f) = - phi_c - pi / 4 + Psi_{int}(f)
@@ -236,7 +237,10 @@ def taylorf2_35pn_phase(
     )
     a6 = a6_const - (6848.0 / 21.0) * np.log(4.0 * v)
 
-    a7 = math.pi * (77096675.0 / 254016.0 + (378515.0 / 1512.0) * eta - (74045.0 / 756.0) * (eta**2))
+    if float(pn_order) >= 3.5:
+        a7 = math.pi * (77096675.0 / 254016.0 + (378515.0 / 1512.0) * eta - (74045.0 / 756.0) * (eta**2))
+    else:
+        a7 = 0.0
 
     # Horner-like or direct summation for intrinsic phase
     poly = (
@@ -262,6 +266,7 @@ def taylorf2_fd_waveform(
     distance_m: float,
     phi_c: float = 0.0,
     f_end: Optional[float] = None,
+    pn_order: float = 3.5,
 ) -> np.ndarray:
     """Generate frequency-domain TaylorF2 strain template h~(f) with inclusive ISCO cutoff.
 
@@ -320,7 +325,7 @@ def taylorf2_fd_waveform(
         f_eval = f_arr[eligible_mask]
         A = taylorf2_amplitude_prefactor(M_c, distance_m)
         amp = A * (f_eval ** (-7.0 / 6.0))
-        psi = taylorf2_35pn_phase(f_eval, m1_kg, m2_kg, phi_c=phi_c)
+        psi = taylorf2_35pn_phase(f_eval, m1_kg, m2_kg, phi_c=phi_c, pn_order=pn_order)
 
         # Frozen Group C Fourier convention: exp(-i * Psi_{TF2}^+)
         h_tilde[eligible_mask] = amp * np.exp(-1.0j * psi)

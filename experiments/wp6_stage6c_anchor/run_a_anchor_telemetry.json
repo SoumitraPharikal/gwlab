@@ -1,0 +1,12 @@
+[
+  {
+    "run_id": "run_a_anchor",
+    "n_eval_attempted": 487407,
+    "n_eval_started": 487407,
+    "n_eval_completed": 487407,
+    "n_eval_failed": 0,
+    "cpu_s": 473.15625,
+    "wall_s": 514.946786600005,
+    "timestamp": 1795070068.0531926
+  }
+]

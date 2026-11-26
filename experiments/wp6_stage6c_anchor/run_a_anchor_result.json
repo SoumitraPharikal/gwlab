@@ -1,0 +1,47 @@
+{
+  "run_id": "run_a_anchor",
+  "target": "run_a",
+  "status": "SUCCESS",
+  "log_evidence": 201646.1413147189,
+  "log_evidence_err": 0.23736832901350433,
+  "n_evaluations": 500657,
+  "guard_evaluations_completed": 487407,
+  "guard_evaluations_started": 487407,
+  "wall_time_s": 514.8341965,
+  "cpu_time_s": 473.0625,
+  "timestamp": 1795070067.9405885,
+  "summary": {
+    "log_evidence": 201646.1413147189,
+    "log_evidence_err": 0.23736832901350433,
+    "n_evaluations": 500657,
+    "n_dead_points": 11951,
+    "n_posterior_samples": 11951,
+    "parameters": {
+      "mc": {
+        "median": 28.196767126283554,
+        "p5": 28.078629985113924,
+        "p95": 28.295141768956938,
+        "ci90_width": 0.21651178384301417
+      },
+      "eta": {
+        "median": 0.2481013887761378,
+        "p5": 0.24288761218665472,
+        "p95": 0.249743478263422,
+        "ci90_width": 0.006855866076767275
+      },
+      "tc": {
+        "median": 1.9994141560850398,
+        "p5": 1.9984829541225597,
+        "p95": 2.0004143936226697,
+        "ci90_width": 0.0019314395001099882
+      },
+      "phic": {
+        "median": 0.580507377198443,
+        "p5": 0.08214847725931135,
+        "p95": 6.1828032309616185,
+        "ci90_width": 6.100654753702307
+      }
+    }
+  },
+  "samples_npz": "run_a_anchor_samples.npz"
+}

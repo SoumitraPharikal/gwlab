@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GWLab Phase 0 — Design Concept Comparison & Art Direction</title>
+  <link rel="stylesheet" href="shared/styles.css">
+  <script src="shared/scripts.js"></script>
+  <style>
+    :root, [data-theme="light"] {
+      --background: #F8F9FA;
+      --surface: #FFFFFF;
+      --surface-subtle: #F1F3F5;
+      --border: #DDE1E5;
+      --border-subtle: #E9ECEF;
+      --foreground: #1A1D20;
+      --foreground-secondary: #495057;
+      --muted: #6C757D;
+      --accent: #B34726;
+      --accent-subtle: #FDF2E9;
+      --concept-a-badge: #8C2D19;
+      --concept-b-badge: #C44D18;
+      --concept-c-badge: #2A4365;
+    }
+    [data-theme="dark"] {
+      --background: #0E1117;
+      --surface: #161B22;
+      --surface-subtle: #1F242C;
+      --border: #30363D;
+      --border-subtle: #21262D;
+      --foreground: #E6EDF3;
+      --foreground-secondary: #8B949E;
+      --muted: #6E7681;
+      --accent: #E65E2E;
+      --accent-subtle: #2A170E;
+      --concept-a-badge: #D85838;
+      --concept-b-badge: #FF6A28;
+      --concept-c-badge: #60A5FA;
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      padding: 0;
+      margin: 0;
+    }
+
+    .comp-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .comp-brand {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+    }
+    .comp-title {
+      font-family: 'Newsreader', serif;
+      font-size: 1.7rem;
+      font-weight: 500;
+    }
+    .comp-tagline {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .comp-container {
+      max-width: 1440px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+
+    /* Comparison Matrix Table */
+    .matrix-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    }
+    .matrix-title {
+      font-family: 'Newsreader', serif;
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .matrix-sub {
+      font-size: 0.85rem;
+      color: var(--foreground-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .matrix-table th, .matrix-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .matrix-table th {
+      background: var(--surface-subtle);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--foreground-secondary);
+    }
+
+    /* Grid of Concept Cards */
+    .concepts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.75rem;
+      margin-bottom: 3rem;
+    }
+    @media (max-width: 1024px) {
+      .concepts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .concept-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .concept-card:hover {
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
+    .concept-card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .concept-badge {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    .badge-a { background: rgba(140, 45, 25, 0.15); color: var(--concept-a-badge); }
+    .badge-b { background: rgba(196, 77, 24, 0.15); color: var(--concept-b-badge); }
+    .badge-c { background: rgba(42, 67, 101, 0.15); color: var(--concept-c-badge); }
+
+    .concept-body {
+      padding: 1.5rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .concept-name {
+      font-family: 'Newsreader', serif;
+      font-size: 1.45rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    .concept-metaphor {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .concept-desc {
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--foreground-secondary);
+      margin-bottom: 1.5rem;
+      flex: 1;
+    }
+
+    .action-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .btn-concept {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 0.6rem 1rem;
+      border-radius: 4px;
+      text-decoration: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.15s ease;
+    }
+    .btn-concept-primary {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      color: var(--foreground);
+    }
+    .btn-concept-primary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-concept-hero {
+      background: var(--accent);
+      color: #FFFFFF;
+      border: 1px solid var(--accent);
+    }
+    .btn-concept-hero:hover {
+      opacity: 0.9;
+    }
+
+    /* Live Preview Section */
+    .preview-section {
+      margin-bottom: 3.5rem;
+    }
+    .preview-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .comp-header {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+      .comp-brand {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+      .comp-title {
+        font-size: 1.35rem;
+      }
+      .comp-container {
+        padding: 0 1rem;
+      }
+      .matrix-card {
+        padding: 1rem;
+      }
+    }
+    .preview-tab-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--foreground-secondary);
+      cursor: pointer;
+    }
+    .preview-tab-btn.active {
+      background: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent);
+    }
+    .preview-frame-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .preview-frame-bar {
+      background: var(--surface-subtle);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+    iframe.preview-iframe {
+      width: 100%;
+      height: 720px;
+      border: none;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="comp-header">
+    <div class="comp-brand">
+      <span style="font-size: 1.2rem; color: var(--accent);">&#x25C7;</span>
+      <h1 class="comp-title">GWLab &middot; Art Direction & Visual Concept Comparison</h1>
+      <span class="comp-tagline">Phase 0 Design Review</span>
+    </div>
+
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <button class="theme-toggle-btn" onclick="toggleTheme()" style="background: var(--surface); border: 1px solid var(--border); padding: 0.4rem 0.85rem; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--foreground); cursor: pointer;">
+        <span class="theme-icon">☀️</span> TOGGLE THEME
+      </button>
+    </div>
+  </header>
+
+  <main class="comp-container">
+
+    <!-- Concept Direction Overview Cards -->
+    <section class="concepts-grid">
+      
+      <!-- Concept A Card -->
+      <div class="concept-card">
+        <div class="concept-card-header">
+          <span class="concept-badge badge-a">DIRECTION A</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted);">SCHOLARLY JOURNAL</span>
+        </div>
+        <div class="concept-body">
+          <h2 class="concept-name">Concept A: Scientific Journal</h2>
+          <div class="concept-metaphor">Living Reviews in Relativity &middot; Scholarly Plates</div>
+          <p class="concept-desc">
+            Asymmetric 2-column editorial grid inspired by classical scientific treatises. Folio headers, formal abstract boxes, academic plate figures with engraved hairline borders, and academic sidenotes for technical qualifications. Warm cream and Venetian oxblood accents.
+          </p>
+          <div class="action-links">
+            <a href="concept-a/index.html" class="btn-concept btn-concept-hero">
+              <span>Open Hero (Index)</span>
+              <span>&rarr;</span>
+            </a>
+            <a href="concept-a/waveforms.html" class="btn-concept btn-concept-primary">
+              <span>Open Waveforms Plate</span>
+              <span>&rarr;</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Concept B Card -->
+      <div class="concept-card">
+        <div class="concept-card-header">
+          <span class="concept-badge badge-b">DIRECTION B</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted);">CALTECH / LIGO LAB</span>
+        </div>
+        <div class="concept-body">
+          <h2 class="concept-name">Concept B: Instrument Laboratory</h2>
+          <div class="concept-metaphor">Caltech / Hanford Control Room Rack Console</div>
+          <p class="concept-desc">
+            High-density telemetry racks, modular aluminum-brushed bays, illuminated CRT phosphor vector traces with reticle grids, stepped potentiometers, status LEDs, and diagnostic buses. Built for high-frequency scientific investigation and direct signal monitoring.
+          </p>
+          <div class="action-links">
+            <a href="concept-b/index.html" class="btn-concept btn-concept-hero">
+              <span>Open Hero (Index)</span>
+              <span>&rarr;</span>
+            </a>
+            <a href="concept-b/waveforms.html" class="btn-concept btn-concept-primary">
+              <span>Open Waveforms Analyzer</span>
+              <span>&rarr;</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Concept C Card -->
+      <div class="concept-card">
+        <div class="concept-card-header">
+          <span class="concept-badge badge-c">DIRECTION C</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted);">CONTEMPORARY MONOGRAPH</span>
+        </div>
+        <div class="concept-body">
+          <h2 class="concept-name">Concept C: Contemporary Physics Atlas</h2>
+          <div class="concept-metaphor">Geometric Gravitation &middot; Multi-Scale Atlas</div>
+          <p class="concept-desc">
+            Expansive geometric canvas featuring celestial coordinate grids, radiating quadrupole wavefront spirals, and a multi-scale decomposition across the four coalescence regimes. Blends modern geometric gravitation monograph elegance with interactive parameter exploration.
+          </p>
+          <div class="action-links">
+            <a href="concept-c/index.html" class="btn-concept btn-concept-hero">
+              <span>Open Hero (Index)</span>
+              <span>&rarr;</span>
+            </a>
+            <a href="concept-c/waveforms.html" class="btn-concept btn-concept-primary">
+              <span>Open Waveform Atlas</span>
+              <span>&rarr;</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Side-by-Side Comparison Matrix -->
+    <section class="matrix-card">
+      <h2 class="matrix-title">Architectural & Art-Direction Comparison Matrix</h2>
+      <p class="matrix-sub">Comprehensive evaluation across aesthetic, typography, information density, and interactive character.</p>
+
+      <div style="overflow-x: auto;">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th style="width: 18%;">Dimension</th>
+              <th style="width: 27%;">Concept A: Scientific Journal</th>
+              <th style="width: 27%;">Concept B: Instrument Laboratory</th>
+              <th style="width: 28%;">Concept C: Contemporary Physics Atlas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Primary Metaphor</strong></td>
+              <td>Philosophical Transactions / Living Reviews in Relativity publication</td>
+              <td>Caltech / LIGO Hanford control room diagnostics console</td>
+              <td>Contemporary geometric gravitation monograph (Tufte / MTW)</td>
+            </tr>
+            <tr>
+              <td><strong>Layout Grid</strong></td>
+              <td>Asymmetric 2-column (8:4) editorial grid with margin sidenotes</td>
+              <td>Modular rack bays with top diagnostic telemetry bus</td>
+              <td>Expansive full-bleed canvas with quad-panel regime ribbon</td>
+            </tr>
+            <tr>
+              <td><strong>Primary Palette (Light)</strong></td>
+              <td>Warm Cream (<code>#FBF9F5</code>) & Venetian Oxblood (<code>#8C2D19</code>)</td>
+              <td>Brushed Aluminum (<code>#EEF0F3</code>) & Cadmium Orange (<code>#C44D18</code>)</td>
+              <td>Celestial Bone (<code>#F7F5F0</code>) & Stellar Terracotta (<code>#B34726</code>)</td>
+            </tr>
+            <tr>
+              <td><strong>Primary Palette (Dark)</strong></td>
+              <td>Archival Black (<code>#111215</code>) & Warm Copper (<code>#D85838</code>)</td>
+              <td>Obsidian Void (<code>#0A0C0F</code>) & Radiant Orange (<code>#FF6A28</code>)</td>
+              <td>Deep Cosmic Void (<code>#0B0D13</code>) & Radiant Terracotta (<code>#E65E2E</code>)</td>
+            </tr>
+            <tr>
+              <td><strong>Typography Roles</strong></td>
+              <td>Newsreader (Body & Display) + IBM Plex Mono (Formulas/Notes)</td>
+              <td>IBM Plex Mono dominant + IBM Plex Sans (Bays)</td>
+              <td>Newsreader (Majestic titles) + IBM Plex Sans + IBM Plex Mono</td>
+            </tr>
+            <tr>
+              <td><strong>Waveform Presentation</strong></td>
+              <td>Engraved Plate figures with mathematical derivations</td>
+              <td>Dual-channel illuminated CRT oscilloscope with reticle grid</td>
+              <td>Synchronized multi-scale atlas: polar radiation + orbital decay</td>
+            </tr>
+            <tr>
+              <td><strong>Information Density</strong></td>
+              <td>Medium-High (Editorial pacing, high legibility)</td>
+              <td>Very High (Rack telemetry, live dials, compact metrics)</td>
+              <td>Medium (Spacious, contemplative, elegant)</td>
+            </tr>
+            <tr>
+              <td><strong>Scientific Honesty</strong></td>
+              <td>Explicit Plate model notes & citation block</td>
+              <td>Telemetry alarm status & theoretical model notice badge</td>
+              <td>Plate caption theoretical disclaimer & geometric unit labels</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Interactive Live Preview Frame -->
+    <section class="preview-section">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.75rem;">
+        <div>
+          <h2 style="font-family: 'Newsreader', serif; font-size: 1.5rem; margin-bottom: 0.25rem;">Interactive Viewport Preview</h2>
+          <p style="font-size: 0.8rem; color: var(--foreground-secondary);">Select a concept and page below to inspect the rendered layout directly.</p>
+        </div>
+      </div>
+
+      <div class="preview-tabs">
+        <button class="preview-tab-btn active" onclick="loadPreview('concept-a/index.html', this)">Concept A &middot; Hero</button>
+        <button class="preview-tab-btn" onclick="loadPreview('concept-a/waveforms.html', this)">Concept A &middot; Waveforms</button>
+        <button class="preview-tab-btn" onclick="loadPreview('concept-b/index.html', this)">Concept B &middot; Hero</button>
+        <button class="preview-tab-btn" onclick="loadPreview('concept-b/waveforms.html', this)">Concept B &middot; Waveforms</button>
+        <button class="preview-tab-btn" onclick="loadPreview('concept-c/index.html', this)">Concept C &middot; Hero</button>
+        <button class="preview-tab-btn" onclick="loadPreview('concept-c/waveforms.html', this)">Concept C &middot; Waveforms</button>
+      </div>
+
+      <div class="preview-frame-container">
+        <div class="preview-frame-bar">
+          <span id="preview-url-display">concept-a/index.html</span>
+          <span style="color: var(--accent);">PREVIEW VIEWPORT: 100% WIDTH</span>
+        </div>
+        <iframe id="preview-frame" class="preview-iframe" src="concept-a/index.html" title="Concept Layout Preview"></iframe>
+      </div>
+    </section>
+
+  </main>
+
+  <footer style="border-top: 1px solid var(--border); background: var(--surface); padding: 1.5rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--muted); text-align: center;">
+    GWLab Phase 0 &middot; Art Direction & Three Visual Concepts &middot; Ready for Independent Scientific Review
+  </footer>
+
+  <script>
+    function loadPreview(url, btn) {
+      document.getElementById('preview-frame').src = url;
+      document.getElementById('preview-url-display').textContent = url;
+      document.querySelectorAll('.preview-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>

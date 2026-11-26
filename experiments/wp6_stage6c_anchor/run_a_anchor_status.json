@@ -1,0 +1,24 @@
+{
+  "run_id": "run_a_anchor",
+  "status": "COMPLETED",
+  "is_complete": true,
+  "exit_code": 0,
+  "n_eval_attempted": 487407,
+  "n_eval_started": 487407,
+  "n_eval_completed": 487407,
+  "cpu_time_s": 473.15625,
+  "wall_time_s": 514.946786600005,
+  "max_calls": 600000,
+  "max_cpu_s": 900.0,
+  "max_wall_s": 1500.0,
+  "termination_reason": "Run completed successfully",
+  "forced_kill_applied": false,
+  "telemetry_integrity": "VALID",
+  "authoritative_counts_available": true,
+  "reconciled_by": "WORKER_AUTH_AND_PARENT",
+  "platform": {
+    "system": "Windows",
+    "release": "11",
+    "python_version": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]"
+  }
+}

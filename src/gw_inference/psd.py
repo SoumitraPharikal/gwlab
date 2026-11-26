@@ -1113,3 +1113,70 @@ class PSDEngine:
         if np.any(psd_active <= 0):
             raise ValueError("Active-bin PSD evaluated to non-positive value")
         return 1.0 / psd_active
+
+
+def analytical_detector_psd(
+    frequencies: np.ndarray,
+    model: str = "aligo_representative",
+) -> np.ndarray:
+    """Evaluate standard analytical reference power spectral density (PSD) curves.
+
+    Parameters
+    ----------
+    frequencies : np.ndarray
+        1D array of non-negative physical frequencies in Hz.
+    model : str, default="aligo_representative"
+        Analytical model name. Supported options:
+        - "aligo_representative": Custom, regularized, hand-constructed representative
+          detector-noise proxy designed for controlled numerical benchmarking:
+              S_n(f) = S_0 * [ (f_knee^2 / (f^2 + f_reg^2))^2 + 1.0 + (f / f_high)^2 ]
+          with S_0 = 1.0e-46 Hz^-1, f_knee = 35.0 Hz, f_reg = 15.0 Hz, f_high = 300.0 Hz.
+          Features finite DC S_n(0) = S_0 * [(35/15)^4 + 1] approx 30.642e-46 Hz^-1.
+          Note: This model is a custom, regularized, hand-constructed representative
+          detector-noise proxy designed for controlled numerical benchmarking. It is
+          NOT an official Advanced LIGO design-sensitivity curve, measured detector
+          PSD, or standard reference formula.
+        - "flat": Constant white-noise reference spectrum:
+              S_n(f) = S_0
+          with S_0 = 1.0e-46 Hz^-1.
+
+    Returns
+    -------
+    np.ndarray
+        1D float64 array of one-sided PSD values in [strain]^2 / Hz matching
+        `frequencies.shape`.
+
+    Raises
+    ------
+    ValueError
+        If `frequencies` is not 1D, contains non-finite values (NaN/Inf), contains
+        negative frequencies, or if `model` is unrecognized.
+    """
+    freqs = np.asarray(frequencies, dtype=np.float64)
+    if freqs.ndim != 1:
+        raise ValueError(f"frequencies must be a 1D array, got dimension {freqs.ndim}")
+    if not np.all(np.isfinite(freqs)):
+        raise ValueError("frequencies must contain only finite numbers (no NaN or Inf)")
+    if np.any(freqs < 0.0):
+        raise ValueError("frequencies cannot contain negative values")
+
+    if not isinstance(model, str):
+        raise ValueError(f"model must be a string, got {type(model)}")
+
+    if model == "aligo_representative":
+        s0 = 1.0e-46
+        f_knee = 35.0
+        f_reg = 15.0
+        f_high = 300.0
+        seismic = (f_knee**2 / (freqs**2 + f_reg**2)) ** 2
+        shot = 1.0
+        mirror = (freqs / f_high) ** 2
+        return (s0 * (seismic + shot + mirror)).astype(np.float64)
+    elif model == "flat":
+        s0 = 1.0e-46
+        return np.full_like(freqs, fill_value=s0, dtype=np.float64)
+    else:
+        raise ValueError(
+            f"Unknown PSD model '{model}'. Supported models: 'aligo_representative', 'flat'"
+        )
+

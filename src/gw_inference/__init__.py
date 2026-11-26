@@ -24,10 +24,30 @@ from gw_inference.conventions import (
     one_sided_periodogram,
     validate_parseval_identity,
 )
+from gw_inference.diagnostics import (
+    R_MIN_CIRCULAR_THRESHOLD,
+    SingleRunDiagnosticResult,
+    compute_circular_moments_and_residuals,
+    compute_coverage_summary,
+    compute_effective_sample_size,
+    compute_ks_test_uniform,
+    compute_linear_credible_interval,
+    compute_linear_moments_and_residuals,
+    compute_shortest_circular_credible_arc,
+    compute_single_run_diagnostics,
+    compute_weighted_percentile_rank_circular,
+    compute_weighted_percentile_rank_linear,
+    compute_weighted_quantile_linear,
+    validate_posterior_samples_and_weights,
+)
 from gw_inference.grid import FrequencyGrid
-from gw_inference.noise import generate_white_noise
+from gw_inference.noise import (
+    generate_colored_noise,
+    generate_white_noise,
+)
 from gw_inference.psd import (
     PSDEngine,
+    analytical_detector_psd,
     discrete_pseudo_covariance_ratios,
     extract_segments,
     low_frequency_psd_continuation,
@@ -51,6 +71,45 @@ from gw_inference.filter import (
     matched_filter,
     matched_filter_core,
     noise_weighted_inner_product,
+)
+from gw_inference.likelihood import (
+    FrequencyDomainGaussianLikelihood,
+    GaussianLikelihoodResult,
+    compute_log_likelihood,
+    compute_log_likelihood_normalization,
+    compute_quadratic_form,
+    compute_residual,
+    validate_psd_frequency_alignment,
+)
+from gw_inference.posterior import (
+    GravitationalWaveLikelihood4DWrapper,
+    GravitationalWaveLikelihoodWrapper,
+)
+from gw_inference.prior import (
+    Correlated4DTotalMassEtaPrior,
+    CorrelatedTotalMassEtaPrior,
+    Uniform4DParameterPrior,
+    UniformChirpMassEtaPrior,
+    mchirp_eta_to_total_mass_eta,
+    prior_transform_2d,
+    prior_transform_4d,
+    prior_transform_total_mass_eta_2d,
+    prior_transform_total_mass_eta_4d,
+    total_mass_eta_jacobian,
+    total_mass_eta_to_mchirp_eta,
+)
+from gw_inference.sampler import (
+    NestedSamplerAdapter,
+    NestedSamplingResult,
+    is_dynesty_available,
+)
+from gw_inference.semi_analytic import (
+    compare_direct_and_ifft_matched_filter,
+    compute_complex_matched_filter_statistic_direct,
+    compute_complex_matched_filter_statistic_ifft,
+    log_bessel_i0,
+    log_phase_marginalized_likelihood,
+    marginalize_extrinsic_parameters_4d,
 )
 from gw_inference.waveform import (
     apply_coalescence_time_shift,
@@ -84,10 +143,12 @@ __all__ = [
     "validate_parseval_identity",
     # Noise
     "generate_white_noise",
+    "generate_colored_noise",
     # Grid & Mask (WP1)
     "FrequencyGrid",
-    # PSD & Engine (WP1)
+    # PSD & Engine (WP1, WP5)
     "PSDEngine",
+    "analytical_detector_psd",
     "low_frequency_psd_continuation",
     "tukey_window",
     "window_power",
@@ -120,4 +181,50 @@ __all__ = [
     "matched_filter",
     "matched_filter_core",
     "noise_weighted_inner_product",
+    # Likelihood & Bayesian Parameter Estimation Core (WP4)
+    "GaussianLikelihoodResult",
+    "compute_residual",
+    "compute_quadratic_form",
+    "compute_log_likelihood_normalization",
+    "compute_log_likelihood",
+    "validate_psd_frequency_alignment",
+    "FrequencyDomainGaussianLikelihood",
+    # Bayesian Parameter Estimation & Sampling Foundation (WP6)
+    "UniformChirpMassEtaPrior",
+    "prior_transform_2d",
+    "Uniform4DParameterPrior",
+    "prior_transform_4d",
+    "total_mass_eta_jacobian",
+    "mchirp_eta_to_total_mass_eta",
+    "total_mass_eta_to_mchirp_eta",
+    "prior_transform_total_mass_eta_2d",
+    "prior_transform_total_mass_eta_4d",
+    "CorrelatedTotalMassEtaPrior",
+    "Correlated4DTotalMassEtaPrior",
+    "GravitationalWaveLikelihoodWrapper",
+    "GravitationalWaveLikelihood4DWrapper",
+    "NestedSamplerAdapter",
+    "NestedSamplingResult",
+    "is_dynesty_available",
+    "compute_complex_matched_filter_statistic_direct",
+    "compute_complex_matched_filter_statistic_ifft",
+    "log_bessel_i0",
+    "log_phase_marginalized_likelihood",
+    "marginalize_extrinsic_parameters_4d",
+    "compare_direct_and_ifft_matched_filter",
+    # Stage 4 Calibration & Diagnostics
+    "R_MIN_CIRCULAR_THRESHOLD",
+    "validate_posterior_samples_and_weights",
+    "compute_effective_sample_size",
+    "compute_weighted_percentile_rank_linear",
+    "compute_weighted_percentile_rank_circular",
+    "compute_linear_moments_and_residuals",
+    "compute_circular_moments_and_residuals",
+    "compute_weighted_quantile_linear",
+    "compute_linear_credible_interval",
+    "compute_shortest_circular_credible_arc",
+    "compute_coverage_summary",
+    "compute_ks_test_uniform",
+    "SingleRunDiagnosticResult",
+    "compute_single_run_diagnostics",
 ]
