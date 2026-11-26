@@ -94,7 +94,7 @@ See [`.env.example`](../.env.example) for the complete template:
 - **Matched Filtering (`/matched-filtering`):** Evaluates complex matched-filter SNR $\rho(t)$ on synthetic injection + colored noise, allowing chirp-mass template mismatch ($\Delta \mathcal{M}_c$), frequency-band adjustment, and spectrum vs time-domain inspection.
 - **Inference (`/inference`):** Interactive explorer for saved Stage 6C Run A weighted posterior samples (`11,951` samples), displaying 1D marginal densities, 2D joint credible contours, and the upper-1% $\eta$-prior-range boundary mass (`38.57%`).
 - **Experiments (`/experiments`):** Read-only comparison of the Stage 5G.2 two-seed pair (`base_01_plug_inst_s1` vs `base_01_plug_inst_s2`) and filterable campaign timeline distinguishing completed, unexecuted (`Run B`), proposed (`Seed 8301`), and frozen (`Model 3`) stages.
-- **Methods (`/methods`):** Frozen mathematical conventions, Whittle likelihood formulation, prior bounds, and scientific limitations.
+- **Methods (`/methods`):** Frozen mathematical conventions, Whittle likelihood formulation, prior bounds, scientific limitations, and a summary of the external real-strain validation on public GWOSC **GW150914 v3** (H1 `8.937598`, L1 `5.545914`, L1 5-bin sensitivity diagnostic `5.039313` / `-9.1347%`; see [GWLab_Complete_Scientific_Report.pdf](../reports/GWLab_Complete_Scientific_Report.pdf)).
 
 ---
 

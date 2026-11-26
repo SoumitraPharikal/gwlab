@@ -136,6 +136,85 @@ export default function MethodsPage() {
           </div>
         </ScientificPanel>
 
+        <ScientificPanel title="External Real-Strain Validation (GWOSC GW150914 v3)">
+          <div className="space-y-4 text-xs text-[var(--foreground-secondary)] leading-relaxed">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-[3px] bg-[var(--surface-subtle)] border border-[var(--border)] text-[11px] font-medium text-[var(--foreground)]">
+              External Real-Strain Check &mdash; Distinct from Synthetic Inference Demonstrations
+            </div>
+
+            <p>
+              While GWLab&apos;s interactive pages and saved Bayesian posteriors operate on synthetic
+              data and archived runs, the conditioning, off-source Welch PSD, and{" "}
+              <code className="font-mono">gw_inference.filter.matched_filter</code> pipeline were
+              separately checked against public GWOSC{" "}
+              <span className="font-mono">GWTC-1-confident v3</span> 32-second H1/L1 strain for{" "}
+              <strong>GW150914</strong> (GPS <span className="font-mono">1126259462.4</span>,
+              4096 Hz downsampled with anti-aliasing to 2048 Hz;{" "}
+              <span className="font-mono">Δf = 0.25 Hz</span>; 1969 active bins in{" "}
+              <span className="font-mono">[20, 512] Hz</span>; 191 nonzero TaylorF2 support bins in{" "}
+              <span className="font-mono">[20, 67.5] Hz</span>).
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-3 rounded-[4px] bg-[var(--surface-subtle)] border border-[var(--border)]">
+                <div className="text-[11px] text-[var(--foreground-muted)]">H1 Baseline (Fixed 35+30 M_sun)</div>
+                <div className="font-mono text-base font-semibold text-[var(--foreground)] mt-0.5 tabular-nums">
+                  SNR 8.937598
+                </div>
+                <div className="font-mono text-[11px] text-[var(--foreground-secondary)] mt-0.5">
+                  +0.0718 s &bull; DQmask 127 &bull; Injmask 31
+                </div>
+              </div>
+
+              <div className="p-3 rounded-[4px] bg-[var(--surface-subtle)] border border-[var(--border)]">
+                <div className="text-[11px] text-[var(--foreground-muted)]">L1 Baseline (Fixed 35+30 M_sun)</div>
+                <div className="font-mono text-base font-semibold text-[var(--foreground)] mt-0.5 tabular-nums">
+                  SNR 5.545914
+                </div>
+                <div className="font-mono text-[11px] text-[var(--foreground-secondary)] mt-0.5">
+                  +0.0610 s &bull; DQmask 127 &bull; Injmask 23
+                </div>
+              </div>
+
+              <div className="p-3 rounded-[4px] bg-[var(--surface-subtle)] border border-[var(--border)]">
+                <div className="text-[11px] text-[var(--foreground-muted)]">
+                  L1 5-Bin Exclusion Diagnostic ([52.25, 53.25] Hz)
+                </div>
+                <div className="font-mono text-base font-semibold text-[var(--foreground)] mt-0.5 tabular-nums">
+                  SNR 5.039313 (&minus;9.1347%)
+                </div>
+                <div className="font-mono text-[11px] text-[var(--foreground-secondary)] mt-0.5">
+                  +0.0605 s &bull; 5 / 191 support bins (2.6178%)
+                </div>
+              </div>
+            </div>
+
+            <ul className="space-y-1.5">
+              <li>
+                &bull; <strong>Consistent Normalization:</strong> Both baseline and L1 exclusion runs
+                apply the exact same mask to the matched-filter numerator and template norm{" "}
+                <span className="font-mono">σ_h</span>.
+              </li>
+              <li>
+                &bull; <strong>L1 CW Hardware-Injection Qualification:</strong>{" "}
+                <span className="font-mono">L1 NO_CW_HW_INJ</span> is false over the event
+                interval (<span className="font-mono">Injmask = 23</span>); L1 is not confirmed
+                injection-free. O1 Pulsar 5 (<span className="font-mono">52.8083 Hz</span>) is a
+                known O1 CW frequency inside <span className="font-mono">[20, 67.5] Hz</span>, but
+                the 5-bin exclusion is a sensitivity diagnostic only&mdash;it also removes real
+                inspiral power and does not establish that a hardware injection caused the SNR
+                change.
+              </li>
+              <li>
+                &bull; <strong>Scope Limitations:</strong> Known-event check with a fixed,
+                non-optimized TaylorF2 inspiral-only template (<span className="font-mono">f_ISCO = 67.65 Hz</span>);
+                not a blind search, not a full IMR analysis, and not full real-data Bayesian
+                parameter estimation.
+              </li>
+            </ul>
+          </div>
+        </ScientificPanel>
+
         <ScientificPanel title="Governance & Verification Principles">
           <div className="space-y-3 text-xs text-[var(--foreground-secondary)] leading-relaxed max-w-3xl">
             <p>

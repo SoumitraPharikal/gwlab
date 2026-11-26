@@ -170,8 +170,14 @@ def run_validation() -> Dict[str, Any]:
 
     results: Dict[str, Any] = {
         "event": "GW150914",
+        "event_version": "GW150914-v3",
         "catalog": "GWTC-1-confident",
         "event_gps": GW150914_GPS,
+        "source_urls": dict(GWOSC_URLS),
+        "data_quality_notes": {
+            "H1": "DQmask=127 (all 7 CBC/Burst quality bits pass), Injmask=31 (all 5 NO_*_HW_INJ bits pass).",
+            "L1": "DQmask=127 (all 7 CBC/Burst quality bits pass), Injmask=23 (NO_CW_HW_INJ bit 3 is 0: CW hardware injections not confirmed absent, not injection-free; O1 Pulsar 5 at ~52.81 Hz lies inside [20, 67.5] Hz template support, with max 4s Welch PSD/median ratio 1.18 in [52.5, 53.0] Hz).",
+        },
         "template": {
             "approximant": "TaylorF2 (3.5PN phase, Newtonian amplitude)",
             "m1_msun": m1_msun,
@@ -251,6 +257,7 @@ def run_validation() -> Dict[str, Any]:
             # Sensitivity diagnostic: exclude narrowband [52.25, 53.25] Hz around O1 Pulsar 5 (~52.8083 Hz)
             notch_low_hz, notch_high_hz = 52.25, 53.25
             notch_bins = (grid.frequencies >= notch_low_hz) & (grid.frequencies <= notch_high_hz)
+            support_mask = mask & (np.abs(template_fd) > 0)
             mask_notched = mask & (~notch_bins)
             mf_notched = matched_filter(
                 grid=grid,
@@ -270,10 +277,16 @@ def run_validation() -> Dict[str, Any]:
             n_peak_dt = float(t_on_rel_event[n_peak_idx])
             abs_diff = n_peak_snr - peak_snr
             pct_diff = 100.0 * abs_diff / peak_snr
+            n_support_bins = int(np.sum(support_mask))
+            n_active_bins = int(np.sum(mask))
+            n_excluded_support = int(np.sum(notch_bins & support_mask))
             results["l1_cw_sensitivity_diagnostic"] = {
                 "target_cw_hz": 52.80832436,
                 "exclusion_band_hz": [notch_low_hz, notch_high_hz],
                 "excluded_bins": int(np.sum(notch_bins)),
+                "active_mask_bins": n_active_bins,
+                "template_support_bins": n_support_bins,
+                "pct_template_support_excluded": 100.0 * n_excluded_support / n_support_bins,
                 "baseline_peak_snr": peak_snr,
                 "baseline_peak_offset_s": peak_dt,
                 "excluded_peak_snr": n_peak_snr,
