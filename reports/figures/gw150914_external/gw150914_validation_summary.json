@@ -1,16 +1,7 @@
 {
   "event": "GW150914",
-  "event_version": "GW150914-v3",
   "catalog": "GWTC-1-confident",
   "event_gps": 1126259462.4,
-  "source_urls": {
-    "H1": "https://gwosc.org/eventapi/json/GWTC-1-confident/GW150914/v3/H-H1_GWOSC_4KHZ_R1-1126259447-32.hdf5",
-    "L1": "https://gwosc.org/eventapi/json/GWTC-1-confident/GW150914/v3/L-L1_GWOSC_4KHZ_R1-1126259447-32.hdf5"
-  },
-  "data_quality_notes": {
-    "H1": "DQmask=127 (all 7 CBC/Burst quality bits pass), Injmask=31 (all 5 NO_*_HW_INJ bits pass).",
-    "L1": "DQmask=127 (all 7 CBC/Burst quality bits pass), Injmask=23 (NO_CW_HW_INJ bit 3 is 0: CW hardware injections active, not injection-free; O1 Pulsar 5 at ~52.81 Hz lies inside [20, 67.65] Hz template support, with max 4s Welch PSD/median ratio 1.18 in [52.5, 53.0] Hz)."
-  },
   "template": {
     "approximant": "TaylorF2 (3.5PN phase, Newtonian amplitude)",
     "m1_msun": 35.0,
@@ -68,5 +59,21 @@
       "peak_gps": 1126259462.4610353,
       "template_sigma": 19.579234660802413
     }
+  },
+  "l1_cw_sensitivity_diagnostic": {
+    "target_cw_hz": 52.80832436,
+    "exclusion_band_hz": [
+      52.25,
+      53.25
+    ],
+    "excluded_bins": 5,
+    "baseline_peak_snr": 5.545914334982036,
+    "baseline_peak_offset_s": 0.06103515625,
+    "excluded_peak_snr": 5.039313298982052,
+    "excluded_peak_offset_s": 0.060546875,
+    "abs_snr_change": -0.5066010359999833,
+    "pct_snr_change": -9.134671136272145,
+    "excluded_template_sigma": 19.073825923634192,
+    "note": "Sensitivity diagnostic only; not a corrected or injection-free measurement."
   }
 }

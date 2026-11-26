@@ -247,6 +247,48 @@ def run_validation() -> Dict[str, Any]:
         }
         print(f"{det}: peak_snr={peak_snr:.2f} at dt={peak_dt:+.4f} s (GPS={peak_gps:.4f}), sigma_h={mf_res.sigma_h:.2f}")
 
+        if det == "L1":
+            # Sensitivity diagnostic: exclude narrowband [52.25, 53.25] Hz around O1 Pulsar 5 (~52.8083 Hz)
+            notch_low_hz, notch_high_hz = 52.25, 53.25
+            notch_bins = (grid.frequencies >= notch_low_hz) & (grid.frequencies <= notch_high_hz)
+            mask_notched = mask & (~notch_bins)
+            mf_notched = matched_filter(
+                grid=grid,
+                data=data_fd,
+                template_fd=template_fd,
+                psd_engine=psd_engine,
+                mask=mask_notched,
+                f_start=20.0,
+                f_0=15.0,
+                tau_chirp=0.0,
+                tau_filter_diag=0.05,
+                compute_chisq=False,
+            )
+            snr_notched = np.asarray(mf_notched.snr_max, dtype=np.float64)
+            n_peak_idx = int(np.argmax(snr_notched * inner))
+            n_peak_snr = float(snr_notched[n_peak_idx])
+            n_peak_dt = float(t_on_rel_event[n_peak_idx])
+            abs_diff = n_peak_snr - peak_snr
+            pct_diff = 100.0 * abs_diff / peak_snr
+            results["l1_cw_sensitivity_diagnostic"] = {
+                "target_cw_hz": 52.80832436,
+                "exclusion_band_hz": [notch_low_hz, notch_high_hz],
+                "excluded_bins": int(np.sum(notch_bins)),
+                "baseline_peak_snr": peak_snr,
+                "baseline_peak_offset_s": peak_dt,
+                "excluded_peak_snr": n_peak_snr,
+                "excluded_peak_offset_s": n_peak_dt,
+                "abs_snr_change": abs_diff,
+                "pct_snr_change": pct_diff,
+                "excluded_template_sigma": float(mf_notched.sigma_h),
+                "note": "Sensitivity diagnostic only; not a corrected or injection-free measurement.",
+            }
+            print(
+                f"L1 CW sensitivity diagnostic [{notch_low_hz}, {notch_high_hz}] Hz: "
+                f"peak_snr={n_peak_snr:.6f} at dt={n_peak_dt:+.4f} s "
+                f"(delta={abs_diff:+.6f}, {pct_diff:+.4f}%)"
+            )
+
     # --- Generate 5 external-data figures ---
     # 1. H1/L1 conditioned strain around event
     fig, axes = plt.subplots(2, 1, figsize=(6.8, 4.2), sharex=True)
