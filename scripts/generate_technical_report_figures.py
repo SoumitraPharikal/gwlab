@@ -1,4 +1,4 @@
-"""Generate publication-quality PDF figures for GWLab_Technical_Report.tex.
+"""Generate publication-quality PDF figures for reports/archive/GWLab_Technical_Report.tex (and GWLab_Complete_Scientific_Report.tex).
 
 Uses only deterministic gwlab.api.service calculations and saved read-only artifacts.
 """

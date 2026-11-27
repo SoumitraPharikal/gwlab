@@ -30,13 +30,13 @@ The core implementation adheres strictly to the approved specification in `repor
 
 ## 2. Files Created and Modified
 
-- **Created Source File:** [`src/gw_inference/filter.py`](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/src/gw_inference/filter.py) (517 lines)
+- **Created Source File:** [`src/gw_inference/filter.py`](../../../src/gw_inference/filter.py) (517 lines)
   - Implements `noise_weighted_inner_product`, `compute_template_norm`, `direct_matched_filter_at_lag`, `matched_filter_core`, `compute_signed_lags`, `compute_chisq_binned`, `compute_reweighted_snr`, `matched_filter`, and the immutable `MatchedFilterResult` dataclass.
-- **Created Test File:** [`tests/test_wp3_filter.py`](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/tests/test_wp3_filter.py) (542 lines)
+- **Created Test File:** [`tests/test_wp3_filter.py`](../../../tests/test_wp3_filter.py) (542 lines)
   - Implements complete test coverage for M1–M12 and ancillary diagnostics (14 tests).
-- **Modified Source File:** [`src/gw_inference/__init__.py`](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/src/gw_inference/__init__.py)
+- **Modified Source File:** [`src/gw_inference/__init__.py`](../../../src/gw_inference/__init__.py)
   - Exposes the approved WP3 functions and classes in the public namespace.
-- **Modified Documentation File:** [`reports/WP3_Mathematical_Specification_and_PreImplementation_Audit.md`](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/reports/WP3_Mathematical_Specification_and_PreImplementation_Audit.md)
+- **Modified Documentation File:** [`reports/WP3_Mathematical_Specification_and_PreImplementation_Audit.md`](WP3_Mathematical_Specification_and_PreImplementation_Audit.md)
   - Updated in previous review step to finalize statistical statements on Allen $\chi^2$ null and non-central conditions.
 
 ---

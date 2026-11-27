@@ -532,7 +532,7 @@ All experiments operate under the unified $T_{\mathrm{analysis}} = 8.0 \, \mathr
 
 ### 16. Final Status Report and Approval Recommendation
 
-* **Document Generated:** [`Stage_0_3_Final_Mathematical_Consistency_Audit.md`](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/Stage_0_3_Final_Mathematical_Consistency_Audit.md)
+* **Document Generated:** [`Stage_0_3_Final_Mathematical_Consistency_Audit.md`](Stage_0_3_Final_Mathematical_Consistency_Audit.md)
 * **Implementation Status:** **Not started.**
 * **Tests Actually Performed:** Non-destructive host OS and environment verification (Windows 11 Home 64-bit), WSL2 subsystem presence and distribution check (`Ubuntu 24.04.2 LTS`, `Python 3.12.3`), GWOSC file metadata lookup. Zero algorithmic or test suite code executed.
 * **Files Modified in Project Workspace:** Only `Stage_0_3_Final_Mathematical_Consistency_Audit.md` has been created. No source modules exist.

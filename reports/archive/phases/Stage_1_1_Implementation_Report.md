@@ -315,13 +315,13 @@ Stage 1.1 establishes the foundational discrete Fourier grid, scaling, and white
 The Stage 1.1 revision and test results are complete and submitted to the independent reviewer (ChatGPT) for formal evaluation.
 
 **Paths for Reviewer Inspection:**
-- Core Conventions Module: [`src/gw_inference/conventions.py`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/src/gw_inference/conventions.py)
-- Noise Generator Module: [`src/gw_inference/noise.py`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/src/gw_inference/noise.py)
-- Conventions Unit Tests: [`tests/test_conventions.py`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/tests/test_conventions.py)
-- Noise Unit Tests: [`tests/test_noise.py`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/tests/test_noise.py)
-- Monte Carlo Script: [`scripts/validate_white_noise_psd.py`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/scripts/validate_white_noise_psd.py)
-- Full Implementation Report: [`reports/Stage_1_1_Implementation_Report.md`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/reports/Stage_1_1_Implementation_Report.md)
-- Project Configuration: [`pyproject.toml`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/pyproject.toml)
-- Repository Documentation: [`README.md`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/README.md)
+- Core Conventions Module: [`src/gw_inference/conventions.py`](../../../src/gw_inference/conventions.py)
+- Noise Generator Module: [`src/gw_inference/noise.py`](../../../src/gw_inference/noise.py)
+- Conventions Unit Tests: [`tests/test_conventions.py`](../../../tests/test_conventions.py)
+- Noise Unit Tests: [`tests/test_noise.py`](../../../tests/test_noise.py)
+- Monte Carlo Script: [`scripts/validate_white_noise_psd.py`](../../../scripts/validate_white_noise_psd.py)
+- Full Implementation Report: [`reports/Stage_1_1_Implementation_Report.md`](Stage_1_1_Implementation_Report.md)
+- Project Configuration: [`pyproject.toml`](../../../pyproject.toml)
+- Repository Documentation: [`README.md`](../../../README.md)
 
 **Awaiting independent scientific reviewer evaluation and authorization before proceeding to Stage 1.2.**

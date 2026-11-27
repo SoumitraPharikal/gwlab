@@ -216,7 +216,7 @@ pytest tests/test_conventions.py tests/test_wp0_parseval.py tests/test_wp1_grid_
 **Outcome:** Zero failures, zero regressions across all 165 unit and integration tests.
 
 ### 6.5 End-to-End Headless Browser Verification (Playwright)
-The automated browser verification script ([test_gwlab_phase3a_browser.py](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/experiments/gwlab_phase2_verification/test_gwlab_phase3a_browser.py)) was executed against the running application on port 8502 using Microsoft Edge (Chromium):
+The automated browser verification script ([test_gwlab_phase3a_browser.py](../../../experiments/gwlab_phase2_verification/test_gwlab_phase3a_browser.py)) was executed against the running application on port 8502 using Microsoft Edge (Chromium):
 - **DOM Assertions Verified:**
   * Title: `"GWLab — Gravitational-Wave Analysis Laboratory"`
   * Page Header: `"Signal Lab — Waveform Inspection & Chirp Dynamics"`
@@ -230,8 +230,8 @@ The automated browser verification script ([test_gwlab_phase3a_browser.py](file:
   * Parameter Reset Button: Clicked and reactive state verified
 - **Console Errors:** Exactly **0 errors** observed.
 - **Captured Workstation Screenshots:**
-  * Desktop ($1440 \times 900$): [gwlab_phase3a_signal_lab_desktop.png](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/reports/figures/gwlab_phase3a_signal_lab_desktop.png) ($126.9\,\text{KB}$)
-  * Tablet ($1024 \times 768$): [gwlab_phase3a_signal_lab_tablet.png](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/reports/figures/gwlab_phase3a_signal_lab_tablet.png) ($102.6\,\text{KB}$)
+  * Desktop ($1440 \times 900$): [gwlab_phase3a_signal_lab_desktop.png](../../screenshots/phases/gwlab_phase3a_signal_lab_desktop.png) ($126.9\,\text{KB}$)
+  * Tablet ($1024 \times 768$): [gwlab_phase3a_signal_lab_tablet.png](../../screenshots/phases/gwlab_phase3a_signal_lab_tablet.png) ($102.6\,\text{KB}$)
 
 ---
 

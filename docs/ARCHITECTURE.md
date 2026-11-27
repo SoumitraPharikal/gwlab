@@ -1,6 +1,6 @@
 # GWLab Architecture Documentation
 
-> **Historical Note:** [GWLab_Phase0_Architecture_and_Repository_Audit.md](../reports/GWLab_Phase0_Architecture_and_Repository_Audit.md) describes the original Streamlit multipage architecture. That frontend was replaced in **Phase 4A** by the Next.js + FastAPI architecture documented below. Legacy Streamlit modules (`src/gwlab/app.py`, `src/gwlab/pages/*.py`) remain in the repository for reference only and are not part of the production Next.js + FastAPI runtime.
+> **Historical Note:** [GWLab_Phase0_Architecture_and_Repository_Audit.md](../reports/archive/phases/GWLab_Phase0_Architecture_and_Repository_Audit.md) describes the original Streamlit multipage architecture. That frontend was replaced in **Phase 4A** by the Next.js + FastAPI architecture documented below. Legacy Streamlit modules (`src/gwlab/app.py`, `src/gwlab/pages/*.py`) remain in the repository for reference only and are not part of the production Next.js + FastAPI runtime.
 
 ---
 

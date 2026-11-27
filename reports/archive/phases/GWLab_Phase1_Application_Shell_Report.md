@@ -164,10 +164,10 @@ pytest tests/test_conventions.py tests/test_wp0_parseval.py tests/test_wp1_grid_
 ### 6.3 Automated Browser Verification (Playwright + Microsoft Edge)
 An automated browser verification script (`experiments/gwlab_phase1_verification/test_gwlab_browser.py`) evaluated the running application on `http://localhost:8502`:
 - **Server Startup:** `streamlit run src/gwlab/app.py --server.headless true --server.port 8502` started cleanly via Uvicorn.
-- **Desktop Viewport ($1440 \times 900\,\text{px}$):** Page title verified as `GWLab — Gravitational-Wave Analysis Laboratory`. Captured `reports/figures/gwlab_phase1_desktop_dark.png` ($128.4\,\text{KB}$).
-- **Theme Toggle Verification:** Clicked theme toggle button. Successfully transitioned to Light theme; captured `reports/figures/gwlab_phase1_desktop_light.png` ($128.4\,\text{KB}$). Toggled back to Dark theme.
+- **Desktop Viewport ($1440 \times 900\,\text{px}$):** Page title verified as `GWLab — Gravitational-Wave Analysis Laboratory`. Captured `reports/screenshots/phases/gwlab_phase1_desktop_dark.png` ($128.4\,\text{KB}$).
+- **Theme Toggle Verification:** Clicked theme toggle button. Successfully transitioned to Light theme; captured `reports/screenshots/phases/gwlab_phase1_desktop_light.png` ($128.4\,\text{KB}$). Toggled back to Dark theme.
   *Pixel Contrast Analysis:* Numerical image comparison demonstrated a **mean pixel difference of $197.71$** (max diff $233$), confirming complete, high-contrast visual canvas switching.
-- **Tablet Viewport ($1024 \times 768\,\text{px}$):** Tablet layout verified without overflow; captured `reports/figures/gwlab_phase1_tablet_dark.png` ($109.3\,\text{KB}$).
+- **Tablet Viewport ($1024 \times 768\,\text{px}$):** Tablet layout verified without overflow; captured `reports/screenshots/phases/gwlab_phase1_tablet_dark.png` ($109.3\,\text{KB}$).
 - **Page Navigation Verification:** Automated navigation sequentially visited and confirmed all 7 pages:
   1. Overview: `Mission Overview & Pipeline Architecture`
   2. Signal Lab: `Signal Lab — Waveform Synthesizer & Chirp Dynamics`

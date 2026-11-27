@@ -68,7 +68,7 @@ Given $N$ time-domain samples at $\Delta t = 1/f_s$ ($\Delta f = 1/T$), syntheti
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.92\textwidth]{figures/fig1_psd_asd.pdf}
+    \includegraphics[width=0.92\textwidth]{../figures/fig1_psd_asd.pdf}
     \caption{Comparison of the custom analytical aLIGO-like ASD proxy $\sqrt{S_n(f)}$ (solid amber) and the Tukey-windowed Welch ASD estimate (gray) computed from a $64\,\mathrm{s}$ synthetic colored Gaussian noise realization (\texttt{seed=7101}, $31$ segments, $\alpha=0.25$, $50\%$ overlap) over the active band $[20, 512]\,\mathrm{Hz}$.}
     \label{fig:psd_asd}
 \end{figure}
@@ -86,7 +86,7 @@ Taking $|\rho(t_j)|$ analytically maximizes over the unknown coalescence phase $
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.92\textwidth]{figures/fig2_matched_filter_snr.pdf}
+    \includegraphics[width=0.92\textwidth]{../figures/fig2_matched_filter_snr.pdf}
     \caption{Matched-filter SNR magnitude $|\rho(t)|$ around coalescence for synthetic injection + colored Gaussian noise (\texttt{seed=7151}, $\rho_{\mathrm{opt}} = 45.3153$). A matched template ($\Delta\mathcal{M}_c = 0.0\,M_\odot$) recovers a peak of $44.28$, while a $\Delta\mathcal{M}_c = +2.5\,M_\odot$ mismatch drops the peak to $34.43$.}
     \label{fig:matched_filter}
 \end{figure}
@@ -121,7 +121,7 @@ The \texttt{/inference} explorer visualizes saved weighted nested-sampling~\cite
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/fig3_posterior_marginals.pdf}
+    \includegraphics[width=0.95\textwidth]{../figures/fig3_posterior_marginals.pdf}
     \caption{Weighted 1D marginal posterior densities for $\mathcal{M}_c$, $\eta$, $t_c$, and $\phi_c$ from the saved Stage~6C Run~A archive ($N = 11{,}951$ samples, Kish $N_{\mathrm{eff}} = 2867.4$). Dashed red lines indicate injected values; solid dark lines indicate posterior medians.}
     \label{fig:posteriors}
 \end{figure}
@@ -131,7 +131,7 @@ The \texttt{/experiments} view compares the archived Stage~5G.2 two-seed pair (\
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.88\textwidth]{figures/fig4_two_seed_evidence.pdf}
+    \includegraphics[width=0.88\textwidth]{../figures/fig4_two_seed_evidence.pdf}
     \caption{Stage~5G.2 two-seed evidence comparison (\texttt{base\_01\_plug\_inst\_s1} vs.\ \texttt{base\_01\_plug\_inst\_s2}). The $2.9720\,\mathrm{nat}$ difference (ratio $8.92$) is a two-seed sensitivity diagnostic, not a convergence or coverage proof.}
     \label{fig:two_seed}
 \end{figure}

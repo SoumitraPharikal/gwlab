@@ -69,7 +69,7 @@ with col_docs:
             "reports/WP6_Stage6C_Run_A_Anchor_Execution_Report.md",
             "reports/WP6_Stage6C_Run_A_Posterior_Forensic_Analysis.md",
             "reports/WP6_Stage6C_Closeout_and_Next_Research_Decision.md",
-            "reports/GWLab_Phase0_Architecture_and_Repository_Audit.md",
+            "reports/archive/phases/GWLab_Phase0_Architecture_and_Repository_Audit.md",
         ],
         target_phase="Phase 5",
     )

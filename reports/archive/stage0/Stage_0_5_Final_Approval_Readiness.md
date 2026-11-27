@@ -553,7 +553,7 @@ The finite-sample correction factor $C(K)$ is an **exact analytical result** der
 
 ### 11. Final Approval-Readiness Statement
 
-* **Document Generated:** [`Stage_0_5_Final_Approval_Readiness.md`](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/Stage_0_5_Final_Approval_Readiness.md)
+* **Document Generated:** [`Stage_0_5_Final_Approval_Readiness.md`](Stage_0_5_Final_Approval_Readiness.md)
 * **Implementation Status:** **Not started.**
 * **Execution Boundary Compliance:**
   * No production source code has been written.

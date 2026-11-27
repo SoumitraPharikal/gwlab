@@ -23,9 +23,9 @@
 
 ## 2. Implemented Documentation
 
-- [README.md](../README.md): Updated from legacy Stage 1.2 notes to current Next.js + FastAPI quickstart, documentation links, and scientific scope/limitations.
-- [docs/USER_MANUAL.md](../docs/USER_MANUAL.md): Created user manual covering installation, local/Docker startup, `.env` variables, route-by-route usage, and troubleshooting.
-- [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md): Created architecture guide documenting the Next.js + FastAPI + `gw_inference` stack, API endpoints, read-only artifact flow, and explicit note marking Phase 0 Streamlit architecture as historical.
+- [README.md](../../../README.md): Updated from legacy Stage 1.2 notes to current Next.js + FastAPI quickstart, documentation links, and scientific scope/limitations.
+- [docs/USER_MANUAL.md](../../../docs/USER_MANUAL.md): Created user manual covering installation, local/Docker startup, `.env` variables, route-by-route usage, and troubleshooting.
+- [docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md): Created architecture guide documenting the Next.js + FastAPI + `gw_inference` stack, API endpoints, read-only artifact flow, and explicit note marking Phase 0 Streamlit architecture as historical.
 - Preserved all historical reports (`reports/GWLab_Phase0_*` through `Phase 6B`) intact.
 
 ---
