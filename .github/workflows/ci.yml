@@ -34,7 +34,7 @@ jobs:
       - name: Install package and test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[api,test,sampling,lab]" httpx
+          pip install -e ".[api,test,sampling,lab]"
 
       - name: Run offline-safe pytest suite
         run: python -m pytest -q
