@@ -407,7 +407,7 @@ $$\Delta t \sum_{j=0}^{N-1} |x_j|^2 = \Delta f \Delta t^2 \left[ |X_0|^2 + 2 \su
 
 ### 13. Final Approval-Readiness Statement
 
-* **Document Generated:** [`Stage_0_4_Final_Scientific_Corrections.md`](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/Stage_0_4_Final_Scientific_Corrections.md)
+* **Document Generated:** [`Stage_0_4_Final_Scientific_Corrections.md`](Stage_0_4_Final_Scientific_Corrections.md)
 * **Implementation Status:** **Not started.**
 * **Execution Boundary Compliance:**
   * No production source code has been written.

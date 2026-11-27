@@ -133,8 +133,8 @@ Evokes classical scholarly treatises (*Philosophical Transactions of the Royal S
 - *Typography:* `Newsreader` for body narrative and derivations; `IBM Plex Mono` for tabular figures and formulas.
 
 ### 4.4 Deliverables
-- **Hero Page:** [concept-a/index.html](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/concepts/concept-a/index.html)
-- **Waveforms Page:** [concept-a/waveforms.html](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/concepts/concept-a/waveforms.html)
+- **Hero Page:** [concept-a/index.html](../../../concepts/concept-a/index.html)
+- **Waveforms Page:** [concept-a/waveforms.html](../../../concepts/concept-a/waveforms.html)
 
 ---
 
@@ -154,8 +154,8 @@ Evokes an operational experimental physics facility (Caltech 40-meter prototype,
 - **Verified Derived Equations:** Parameter summary card updated with exact formulas, units, and Schwarzschild ISCO test-particle qualification.
 
 ### 5.3 Deliverables
-- **Hero Page:** [concept-b/index.html](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/concepts/concept-b/index.html)
-- **Waveforms Page:** [concept-b/waveforms.html](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/concepts/concept-b/waveforms.html)
+- **Hero Page:** [concept-b/index.html](../../../concepts/concept-b/index.html)
+- **Waveforms Page:** [concept-b/waveforms.html](../../../concepts/concept-b/waveforms.html)
 
 ---
 
@@ -172,8 +172,8 @@ Draws inspiration from contemporary geometric gravitation monographs (Misner-Tho
 - **Verified Parameter Derivations:** Updated geometric readout card to display $R_{\text{ISCO}} = 575.9\,\text{km}$ ($8.8596 \times 65.0\,\text{km}$) and $f_{\text{ISCO}} = 67.65\,\text{Hz}$ ($4397.17 / 65.0$).
 
 ### 6.3 Deliverables
-- **Hero Page:** [concept-c/index.html](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/concepts/concept-c/index.html)
-- **Waveforms Page:** [concept-c/waveforms.html](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/concepts/concept-c/waveforms.html)
+- **Hero Page:** [concept-c/index.html](../../../concepts/concept-c/index.html)
+- **Waveforms Page:** [concept-c/waveforms.html](../../../concepts/concept-c/waveforms.html)
 
 ---
 
@@ -239,9 +239,9 @@ A background static HTTP server is running and serving the `concepts/` directory
 
 ### 9.2 Concise Contact Sheets
 Two high-density visual contact sheets have been generated at $2240 \times 586\,\text{px}$:
-1. **Home Concepts Contact Sheet:** [contact_sheet_home.png](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/reports/screenshots/concepts/contact_sheet_home.png)  
+1. **Home Concepts Contact Sheet:** [contact_sheet_home.png](../../screenshots/concepts/contact_sheet_home.png)  
    *(Compares Concept A, Concept B, and Concept C heroes side-by-side at 1440×900 desktop resolution)*
-2. **Waveforms Concepts Contact Sheet:** [contact_sheet_waveforms.png](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/reports/screenshots/concepts/contact_sheet_waveforms.png)  
+2. **Waveforms Concepts Contact Sheet:** [contact_sheet_waveforms.png](../../screenshots/concepts/contact_sheet_waveforms.png)  
    *(Compares Concept A, Concept B, and Concept C waveform inner pages side-by-side at 1440×900 desktop resolution)*
 
 ---

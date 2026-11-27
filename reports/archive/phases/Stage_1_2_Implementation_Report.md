@@ -323,21 +323,21 @@ tests/test_psd.py ............................................................. 
 ### 8. Files Created and Modified
 
 1. **Modified in this revision:**
-   - [`src/gw_inference/psd.py`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/src/gw_inference/psd.py):
+   - [`src/gw_inference/psd.py`](../../../src/gw_inference/psd.py):
      - Corrected FFT shortcut condition in `discrete_pseudo_covariance_ratios` to `2 * overlap == M`.
      - Preserved exact direct discrete phase-sum fallback for odd $M$ and general overlap fractions.
      - Preserved strict median API assertion gating and all-lags variance inflation.
-   - [`scripts/validate_welch_psd.py`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/scripts/validate_welch_psd.py):
+   - [`scripts/validate_welch_psd.py`](../../../scripts/validate_welch_psd.py):
      - Preserved strict `welch_psd` API contract in Tukey diagnostic by calling `welch_psd(..., method="median", bias_correct=False)` and applying $C(K)$ division separately inside the script.
      - Renamed evaluation interval to "interior-bin validation interval $[5, M/2-5]$" and clarified that it strictly encompasses the physical analysis band $[30, 1024]\,\mathrm{Hz}$.
      - Paired bootstrap ($B=1000$) across Monte Carlo realizations preserved.
-   - [`tests/test_psd.py`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/tests/test_psd.py):
+   - [`tests/test_psd.py`](../../../tests/test_psd.py):
      - Added odd-length pseudo-covariance regression test ($M=255, \mathrm{overlap}=127$) comparing `P12` against an independent direct phase sum.
      - Added even-length optimized ($2 \times \mathrm{overlap} == M$) and non-50% overlap regression tests.
      - Updated test assertions (total 157 tests passing).
-   - [`README.md`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/README.md):
+   - [`README.md`](../../../README.md):
      - Updated test counts and feature checklists.
-   - [`reports/Stage_1_2_Implementation_Report.md`](file:///C:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/reports/Stage_1_2_Implementation_Report.md):
+   - [`reports/Stage_1_2_Implementation_Report.md`](Stage_1_2_Implementation_Report.md):
      - Documented Correction A (odd-length pseudo-covariance condition), Correction B (strict median API contract in Tukey diagnostic), and interior-bin validation interval terminology.
 
 ---

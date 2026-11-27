@@ -548,7 +548,7 @@ $C(K)$ is exact under the strict assumption of **independent exponential periodo
 
 ### 11. Final Approval-Readiness Statement
 
-* **Document:** [`Stage_0_6_Final_Consistency_and_Approval.md`](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/Stage_0_6_Final_Consistency_and_Approval.md)
+* **Document:** [`Stage_0_6_Final_Consistency_and_Approval.md`](Stage_0_6_Final_Consistency_and_Approval.md)
 * **Implementation Status:** **Not started.**
 * **Execution Boundary Compliance:**
   * No production source code has been written.

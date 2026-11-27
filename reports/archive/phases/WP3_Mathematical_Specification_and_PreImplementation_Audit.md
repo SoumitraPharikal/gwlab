@@ -48,11 +48,11 @@ The following targeted corrections have been applied in Revision 6:
 ### 2.2 Committed Public Interfaces Consumed by WP3
 `[EXISTING & SOURCE-VERIFIED]`
 Direct inspection of `src/gw_inference/` verifies the following exact public interfaces:
-- [`FrequencyGrid`](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/src/gw_inference/grid.py#L20-L110): Full frequency grid $f_k = k \Delta f$ ($k = 0, \dots, \lfloor N/2 \rfloor$), `create_active_mask(f_start, f_end)` with DC and even-N Nyquist strictly excluded.
-- [`continuous_rfft`](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/src/gw_inference/conventions.py#L126-L154): Continuous Fourier transform approximation $\tilde{x}(f_k) = \Delta t \cdot \operatorname{rfft}(x)_k$.
-- [`PSDEngine`](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/src/gw_inference/psd.py#L932-L1115): Log-linear PSD interpolator; `get_inverse_psd_on_active_bins` returning $1 / S_n(f_k)$ on $\mathcal{K}_+$ (requires mandatory $f_0$).
-- [`taylorf2_fd_waveform`](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/src/gw_inference/waveform.py#L258-L329): Generates $\tilde{h}(f_k) = \mathcal{A} f^{-7/6} e^{-i \Psi_{\mathrm{TF2}}^+(f_k)}$ for $f_k \le f_{\mathrm{term}} = \min(f_{\mathrm{end}}, f_{\mathrm{ISCO}})$, and identically 0 for $f_k > f_{\mathrm{term}}$.
-- [`apply_coalescence_time_shift`](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/src/gw_inference/waveform.py#L331-L361): Evaluates $\tilde{h}(f) e^{-i 2\pi f t_c}$.
+- [`FrequencyGrid`](../../../src/gw_inference/grid.py#L20-L110): Full frequency grid $f_k = k \Delta f$ ($k = 0, \dots, \lfloor N/2 \rfloor$), `create_active_mask(f_start, f_end)` with DC and even-N Nyquist strictly excluded.
+- [`continuous_rfft`](../../../src/gw_inference/conventions.py#L126-L154): Continuous Fourier transform approximation $\tilde{x}(f_k) = \Delta t \cdot \operatorname{rfft}(x)_k$.
+- [`PSDEngine`](../../../src/gw_inference/psd.py#L932-L1115): Log-linear PSD interpolator; `get_inverse_psd_on_active_bins` returning $1 / S_n(f_k)$ on $\mathcal{K}_+$ (requires mandatory $f_0$).
+- [`taylorf2_fd_waveform`](../../../src/gw_inference/waveform.py#L258-L329): Generates $\tilde{h}(f_k) = \mathcal{A} f^{-7/6} e^{-i \Psi_{\mathrm{TF2}}^+(f_k)}$ for $f_k \le f_{\mathrm{term}} = \min(f_{\mathrm{end}}, f_{\mathrm{ISCO}})$, and identically 0 for $f_k > f_{\mathrm{term}}$.
+- [`apply_coalescence_time_shift`](../../../src/gw_inference/waveform.py#L331-L361): Evaluates $\tilde{h}(f) e^{-i 2\pi f t_c}$.
 
 ---
 
