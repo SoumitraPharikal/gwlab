@@ -1,0 +1,91 @@
+{
+  "event": "GW150914",
+  "event_version": "GW150914-v3",
+  "catalog": "GWTC-1-confident",
+  "event_gps": 1126259462.4,
+  "source_urls": {
+    "H1": "https://gwosc.org/eventapi/json/GWTC-1-confident/GW150914/v3/H-H1_GWOSC_4KHZ_R1-1126259447-32.hdf5",
+    "L1": "https://gwosc.org/eventapi/json/GWTC-1-confident/GW150914/v3/L-L1_GWOSC_4KHZ_R1-1126259447-32.hdf5"
+  },
+  "data_quality_notes": {
+    "H1": "DQmask=127 (all 7 CBC/Burst quality bits pass), Injmask=31 (all 5 NO_*_HW_INJ bits pass).",
+    "L1": "DQmask=127 (all 7 CBC/Burst quality bits pass), Injmask=23 (NO_CW_HW_INJ bit 3 is 0: CW hardware injections not confirmed absent, not injection-free; O1 Pulsar 5 at ~52.81 Hz lies inside [20, 67.5] Hz template support, with max 4s Welch PSD/median ratio 1.18 in [52.5, 53.0] Hz)."
+  },
+  "template": {
+    "approximant": "TaylorF2 (3.5PN phase, Newtonian amplitude)",
+    "m1_msun": 35.0,
+    "m2_msun": 30.0,
+    "mc_msun": 28.19232596224401,
+    "eta": 0.2485207100591716,
+    "f_isco_hz": 67.64876923076923,
+    "active_band_hz": [
+      20.0,
+      512.0
+    ]
+  },
+  "detectors": {
+    "H1": {
+      "metadata": {
+        "file": "H-H1_GWOSC_4KHZ_R1-1126259447-32.hdf5",
+        "size_bytes": 1040781,
+        "sha256": "c5ea87beced5094b56b4d694f3a36e6d59f74d3a46e546b980a6a199d1f252a9",
+        "gps_start": 1126259447.0,
+        "duration_s": 32.0,
+        "utc_start": "2015-09-14T09:50:30",
+        "fs_raw_hz": 4096.0,
+        "fs_target_hz": 2048.0,
+        "n_samples_raw": 131072,
+        "n_samples_conditioned": 65536,
+        "dq_mask_min": 127,
+        "dq_mask_max": 127,
+        "inj_mask_min": 31,
+        "inj_mask_max": 31
+      },
+      "peak_snr": 8.937598051259881,
+      "peak_offset_from_event_s": 0.07177734375,
+      "peak_gps": 1126259462.4717774,
+      "template_sigma": 24.680493426586935
+    },
+    "L1": {
+      "metadata": {
+        "file": "L-L1_GWOSC_4KHZ_R1-1126259447-32.hdf5",
+        "size_bytes": 1007262,
+        "sha256": "9d65bde82f7ec035bea4c02228bce4acb3dcaae774c047edce71ef2ad64f1cc4",
+        "gps_start": 1126259447.0,
+        "duration_s": 32.0,
+        "utc_start": "2015-09-14T09:50:30",
+        "fs_raw_hz": 4096.0,
+        "fs_target_hz": 2048.0,
+        "n_samples_raw": 131072,
+        "n_samples_conditioned": 65536,
+        "dq_mask_min": 127,
+        "dq_mask_max": 127,
+        "inj_mask_min": 23,
+        "inj_mask_max": 23
+      },
+      "peak_snr": 5.545914334982036,
+      "peak_offset_from_event_s": 0.06103515625,
+      "peak_gps": 1126259462.4610353,
+      "template_sigma": 19.579234660802413
+    }
+  },
+  "l1_cw_sensitivity_diagnostic": {
+    "target_cw_hz": 52.80832436,
+    "exclusion_band_hz": [
+      52.25,
+      53.25
+    ],
+    "excluded_bins": 5,
+    "active_mask_bins": 1969,
+    "template_support_bins": 191,
+    "pct_template_support_excluded": 2.6178010471204187,
+    "baseline_peak_snr": 5.545914334982036,
+    "baseline_peak_offset_s": 0.06103515625,
+    "excluded_peak_snr": 5.039313298982052,
+    "excluded_peak_offset_s": 0.060546875,
+    "abs_snr_change": -0.5066010359999833,
+    "pct_snr_change": -9.134671136272145,
+    "excluded_template_sigma": 19.073825923634192,
+    "note": "Sensitivity diagnostic only; not a corrected or injection-free measurement."
+  }
+}

@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concept C — Waveform Geometry Atlas | GWLab</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <script src="../shared/waveforms-data.js"></script>
+  <script src="../shared/scripts.js"></script>
+  <style>
+    :root, [data-theme="light"] {
+      --background: #F7F5F0;
+      --surface: #FFFFFF;
+      --surface-subtle: #EFECE6;
+      --border: #DCD7CE;
+      --border-subtle: #E8E4DC;
+      --foreground: #12141D;
+      --foreground-secondary: #3D4352;
+      --muted: #6E7585;
+      --muted-light: #9CA3B5;
+      --accent: #B34726;
+      --accent-subtle: #F9EFEB;
+      --accent-border: #E0A692;
+      --cosmic-blue: #1E3A8A;
+      --atlas-grid: rgba(18, 20, 29, 0.06);
+    }
+    [data-theme="dark"] {
+      --background: #0B0D13;
+      --surface: #131620;
+      --surface-subtle: #1A1F2C;
+      --border: #23293A;
+      --border-subtle: #1B202E;
+      --foreground: #EDEBF2;
+      --foreground-secondary: #A0A8BA;
+      --muted: #677185;
+      --muted-light: #444C5E;
+      --accent: #E65E2E;
+      --accent-subtle: #2B1610;
+      --accent-border: #702F17;
+      --cosmic-blue: #60A5FA;
+      --atlas-grid: rgba(237, 235, 242, 0.05);
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+    }
+
+    .atlas-masthead {
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .atlas-logo {
+      display: flex;
+      align-items: baseline;
+      gap: 0.85rem;
+    }
+    .atlas-title {
+      font-family: 'Newsreader', serif;
+      font-size: 1.45rem;
+      font-weight: 500;
+    }
+    .atlas-subtitle {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .atlas-nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      list-style: none;
+    }
+
+    @media (max-width: 860px) {
+      .atlas-masthead {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+      }
+      .atlas-container {
+        padding: 0 1rem;
+      }
+      .spread-title {
+        font-size: 1.85rem;
+      }
+    }
+    .atlas-nav-links a {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--foreground-secondary);
+      text-decoration: none;
+      padding-bottom: 0.25rem;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s ease;
+    }
+    .atlas-nav-links a:hover {
+      color: var(--foreground);
+      border-bottom-color: var(--border);
+    }
+    .atlas-nav-links a.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .atlas-container {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+
+    .spread-header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+    }
+    .spread-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+    }
+    .spread-title {
+      font-family: 'Newsreader', serif;
+      font-size: 2.4rem;
+      font-weight: 400;
+      margin-bottom: 0.5rem;
+    }
+    .spread-intro {
+      font-family: 'Newsreader', serif;
+      font-size: 1.15rem;
+      font-style: italic;
+      color: var(--foreground-secondary);
+      max-width: 850px;
+    }
+
+    /* Main Multi-Plate Grid */
+    .plates-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 8.5fr) minmax(0, 3.5fr);
+      gap: 2rem;
+    }
+    @media (max-width: 1024px) {
+      .plates-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .plate-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+    }
+    .plate-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .plate-heading {
+      font-family: 'Newsreader', serif;
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+    .plate-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .plate-caption {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--foreground-secondary);
+      margin-top: 0.85rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    /* Parameter Potentiometer Column */
+    .controls-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.5rem;
+      position: sticky;
+      top: 1.5rem;
+    }
+    .controls-title {
+      font-family: 'Newsreader', serif;
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+    .controls-sub {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.5rem;
+    }
+
+    .slider-box {
+      margin-bottom: 1.25rem;
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.35rem;
+    }
+    .slider-name {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+    .slider-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .atlas-slider {
+      width: 100%;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+    }
+    .atlas-slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    .geometric-readout-card {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 1rem;
+      margin-top: 1.5rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      line-height: 1.6;
+    }
+
+    .btn-atlas {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.65rem 1.25rem;
+      border-radius: 3px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .btn-atlas-primary {
+      background: var(--accent);
+      color: #FFFFFF;
+      border: 1px solid var(--accent);
+    }
+    .btn-atlas-outline {
+      background: var(--surface);
+      color: var(--foreground);
+      border: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Masthead -->
+  <header class="atlas-masthead">
+    <div class="atlas-logo">
+      <span style="font-size: 1.1rem; color: var(--accent);">&#x2299;</span>
+      <span class="atlas-title">GWLab</span>
+      <span class="atlas-subtitle">Contemporary Physics Atlas</span>
+    </div>
+
+    <nav aria-label="Atlas sections">
+      <ul class="atlas-nav-links">
+        <li><a href="index.html">Atlas Overview</a></li>
+        <li><a href="waveforms.html" class="active">Waveform Geometry</a></li>
+        <li><a href="waveforms.html#polar">Quadrupole Polar</a></li>
+        <li><a href="waveforms.html#spectral">Spectral Dispersion</a></li>
+        <li><a href="../comparison.html" style="color: var(--accent);">Compare Concepts</a></li>
+      </ul>
+    </nav>
+
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+      <button class="theme-toggle-btn" onclick="toggleTheme()" style="background: var(--surface); border: 1px solid var(--border); padding: 0.35rem 0.75rem; border-radius: 3px; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--foreground); cursor: pointer;">
+        <span class="theme-icon">☀️</span> Light / Dark
+      </button>
+    </div>
+  </header>
+
+  <main class="atlas-container">
+
+    <div class="spread-header">
+      <div class="spread-tag">Atlas Spread II &middot; Spacetime Geometry & Fourier Mechanics</div>
+      <h1 class="spread-title">Geometric Decomposition of Chirping Quadrupoles</h1>
+      <p class="spread-intro">
+        Coalescing compact binaries trace geodesic trajectories through dynamic spacetime curvature. 
+        Below are three synchronized geometric representations of the 3.5PN post-Newtonian model.
+      </p>
+    </div>
+
+    <div class="plates-layout">
+      <!-- Left Column: Geometric Waveform Plates -->
+      <div>
+
+        <!-- Plate II.A: Frequency-Domain Strain Spectrum -->
+        <article class="plate-card" id="spectral">
+          <div class="plate-card-header">
+            <h2 class="plate-heading">Plate II.A &middot; Fourier Amplitude Spectrum & Asymptotic Power Law</h2>
+            <span class="plate-label">TAYLORF2 3.5PN &middot; STATIONARY-PHASE APPROXIMATION</span>
+          </div>
+
+          <svg id="atlas-fourier-svg" viewBox="0 0 760 300" style="width: 100%; height: auto; display: block;">
+            <defs>
+              <pattern id="grid-c" width="40" height="30" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 30" fill="none" stroke="var(--atlas-grid)" stroke-width="0.8" />
+              </pattern>
+            </defs>
+            <rect width="760" height="300" fill="var(--surface-subtle)" />
+            <rect width="760" height="300" fill="url(#grid-c)" />
+
+            <!-- Asymptotic Envelope Guide: f^(-7/6) -->
+            <path d="M 60 50 Q 250 145 600 255" fill="none" stroke="var(--muted-light)" stroke-width="1.2" stroke-dasharray="4 3" />
+            <text x="320" y="150" font-family="'Newsreader', serif" font-size="12" font-style="italic" fill="var(--muted)">|h~(f)| &prop; f &minus;7/6</text>
+
+            <!-- Coordinate Axes Frame -->
+            <rect x="60" y="30" width="650" height="235" fill="none" stroke="var(--border)" stroke-width="1" />
+
+            <!-- Frequency Calibrated Ticks -->
+            <text x="60" y="280" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--muted)">20 Hz</text>
+            <text x="210" y="280" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--muted)">30 Hz</text>
+            <text x="380" y="280" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--muted)">50 Hz</text>
+            <text id="plate-isco-tick" x="550" y="280" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--accent)">67.6 Hz (ISCO)</text>
+            <text x="710" y="280" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--muted)">100 Hz</text>
+
+            <!-- Strain Axis Ticks -->
+            <text x="52" y="260" font-family="'IBM Plex Mono', monospace" font-size="8.5" text-anchor="end" fill="var(--muted)">10⁻²³</text>
+            <text x="52" y="185" font-family="'IBM Plex Mono', monospace" font-size="8.5" text-anchor="end" fill="var(--muted)">10⁻²²</text>
+            <text x="52" y="110" font-family="'IBM Plex Mono', monospace" font-size="8.5" text-anchor="end" fill="var(--muted)">10⁻²¹</text>
+            <text x="52" y="38" font-family="'IBM Plex Mono', monospace" font-size="8.5" text-anchor="end" fill="var(--muted)">10⁻²⁰</text>
+
+            <!-- ISCO Cutoff Line -->
+            <line id="plate-isco-line" x1="550" y1="30" x2="550" y2="265" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 3" />
+
+            <!-- Active Waveform Curve -->
+            <path id="plate-strain-curve" d="M 60 55 L 150 95 L 260 148 L 380 200 L 490 242 L 550 262" 
+                  fill="none" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round" />
+
+            <!-- ISCO Plunge Dot -->
+            <circle id="plate-isco-dot" cx="550" cy="262" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="1.5" />
+          </svg>
+
+          <div class="plate-caption">
+            <span>MODEL: TAYLORF2 3.5PN EXPANSION &middot; INSPIRAL PREFACTOR</span>
+            <span style="color: var(--accent); font-weight: 600;">THEORETICAL MODEL WAVEFORM &middot; NOT DETECTOR DATA</span>
+          </div>
+        </article>
+
+        <!-- Plate II.B: Spacetime Orbital Separation r(t)/M vs Frequency -->
+        <article class="plate-card" id="polar">
+          <div class="plate-card-header">
+            <h2 class="plate-heading">Plate II.B &middot; Orbital Coordinate Separation & ISCO Geodesic Breakdown</h2>
+            <span class="plate-label">GEOMETRIC UNITS (G = c = 1)</span>
+          </div>
+
+          <svg viewBox="0 0 760 220" style="width: 100%; height: auto; display: block;">
+            <rect width="760" height="220" fill="var(--surface-subtle)" />
+            <rect width="760" height="220" fill="url(#grid-c)" />
+
+            <!-- Axes Frame -->
+            <rect x="60" y="25" width="650" height="165" fill="none" stroke="var(--border)" stroke-width="1" />
+
+            <!-- Horizontal ISCO Coordinate Line: r = 6M -->
+            <line x1="60" y1="135" x2="710" y2="135" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="3 2" />
+            <text x="65" y="128" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="var(--accent)">TEST-PARTICLE SCHWARZSCHILD ISCO: r = 6M (HEURISTIC PN CUTOFF)</text>
+
+            <!-- Infall Trajectory r(f) -->
+            <!-- r = (G M / (pi f)^(2/3))^(1/3) -->
+            <path d="M 60 45 Q 260 65 450 105 T 550 135 L 590 185" 
+                  fill="none" stroke="var(--cosmic-blue)" stroke-width="2.4" stroke-linecap="round" />
+
+            <!-- Annotations -->
+            <text x="60" y="205" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--muted)">20 Hz (r ~ 16M)</text>
+            <text x="350" y="205" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--muted)">45 Hz (r ~ 9M)</text>
+            <text x="550" y="205" font-family="'IBM Plex Mono', monospace" font-size="9" text-anchor="middle" fill="var(--accent)">67.6 Hz (r = 6M)</text>
+
+            <text x="52" y="50" font-family="'IBM Plex Mono', monospace" font-size="8.5" text-anchor="end" fill="var(--muted)">16M</text>
+            <text x="52" y="95" font-family="'IBM Plex Mono', monospace" font-size="8.5" text-anchor="end" fill="var(--muted)">10M</text>
+            <text x="52" y="140" font-family="'IBM Plex Mono', monospace" font-size="8.5" text-anchor="end" fill="var(--accent)">6M</text>
+            <text x="52" y="185" font-family="'IBM Plex Mono', monospace" font-size="8.5" text-anchor="end" fill="var(--muted)">2M</text>
+          </svg>
+
+          <div class="plate-caption">
+            <span>TRAJECTORY SCHEMATIC: SCHWARZSCHILD ISCO (r = 6M) REPRESENTS TEST-PARTICLE GEODESIC LIMIT. IN COMPARABLE-MASS BINARIES, DYNAMICAL MUTUAL DEFORMATIONS SHIFT THE PLUNGE; 6M IS NOT A UNIVERSAL MERGER BOUNDARY.</span>
+            <span style="color: var(--cosmic-blue); font-weight: 500;">MODEL SCOPE: TAYLORF2 COVERS INSPIRAL ONLY (NO MERGER/RINGDOWN)</span>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- Right Column: Atlas Controls & Curated Geometric Metrics -->
+      <aside>
+        <div class="controls-panel">
+          <h3 class="controls-title">Source Kinematics</h3>
+          <div class="controls-sub">Post-Newtonian Invariant Controls</div>
+
+          <div class="slider-box">
+            <div class="slider-header">
+              <span class="slider-name">Chirp Mass \(\mathcal{M}_c\)</span>
+              <span id="atlas-val-mc" class="slider-val">28.10 \(M_\odot\)</span>
+            </div>
+            <input type="range" id="atlas-slider-mc" class="atlas-slider" min="25.0" max="35.0" step="0.05" value="28.10" oninput="updateAtlasControls()">
+            <div style="font-size: 0.68rem; font-family: 'IBM Plex Mono', monospace; color: var(--muted); margin-top: 0.25rem;">
+              Leading secular frequency evolution coefficient.
+            </div>
+          </div>
+
+          <div class="slider-box">
+            <div class="slider-header">
+              <span class="slider-name">Symmetric Mass Ratio \(\eta\)</span>
+              <span id="atlas-val-eta" class="slider-val">0.2471</span>
+            </div>
+            <input type="range" id="atlas-slider-eta" class="atlas-slider" min="0.2000" max="0.2500" step="0.0005" value="0.2471" oninput="updateAtlasControls()">
+            <div style="font-size: 0.68rem; font-family: 'IBM Plex Mono', monospace; color: var(--muted); margin-top: 0.25rem;">
+              Higher PN correction sensitivity; physical boundary at 0.25.
+            </div>
+          </div>
+
+          <div class="slider-box">
+            <div class="slider-header">
+              <span class="slider-name">Luminosity Distance \(d_L\)</span>
+              <span id="atlas-val-dl" class="slider-val">410.0 Mpc</span>
+            </div>
+            <input type="range" id="atlas-slider-dl" class="atlas-slider" min="100" max="1000" step="10" value="410" oninput="updateAtlasControls()">
+            <div style="font-size: 0.68rem; font-family: 'IBM Plex Mono', monospace; color: var(--muted); margin-top: 0.25rem;">
+              Scales inverse metric perturbation amplitude \(h \propto d_L^{-1}\).
+            </div>
+          </div>
+
+          <!-- Geometric Readout Card -->
+          <div class="geometric-readout-card">
+            <div style="font-family: 'IBM Plex Sans', sans-serif; font-size: 0.72rem; font-weight: 600; color: var(--foreground); margin-bottom: 0.4rem; text-transform: uppercase;">
+              Derived Geometric Parameters &amp; Equations
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+              <span style="color: var(--muted);">TOTAL MASS M = M_c / &eta;^(3/5):</span>
+              <span id="atlas-calc-m" style="font-weight: 600;">65.0 M_&sun;</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+              <span style="color: var(--muted);">SCHWARZSCHILD R_ISCO = 6GM/c&sup2;:</span>
+              <span id="atlas-calc-risco" style="font-weight: 600;">575.9 km</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+              <span style="color: var(--muted);">HEURISTIC f_ISCO = C_ISCO / M:</span>
+              <span id="atlas-calc-fisco" style="color: var(--accent); font-weight: 600;">67.65 Hz</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--muted);">TIME-TO-MERGER &tau;(20 Hz):</span>
+              <span id="atlas-calc-tau" style="font-weight: 600;">0.81 s</span>
+            </div>
+            <div style="margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px dashed var(--border); font-size: 0.65rem; color: var(--muted); font-family: 'IBM Plex Sans', sans-serif; line-height: 1.4;">
+              <em>Physics Qualification:</em> R_ISCO is strictly the test-particle ISCO in Schwarzschild geometry. In comparable-mass coalescences, mutual dynamical perturbations deform the plunge; 6M is not a universal threshold.
+            </div>
+          </div>
+
+          <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.6rem;">
+            <a href="index.html" class="btn-atlas btn-atlas-outline" style="justify-content: center;">
+              &larr; Return to Atlas Overview
+            </a>
+            <a href="../comparison.html" class="btn-atlas btn-atlas-primary" style="justify-content: center;">
+              View Side-by-Side Comparison
+            </a>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+  </main>
+
+  <footer style="border-top: 1px solid var(--border); background: var(--surface); padding: 1.5rem 2rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--muted); text-align: center; margin-top: 3rem;">
+    GWLab &middot; Concept C: Contemporary Physics Atlas &middot; Curated for Research & Scientific Portfolio
+  </footer>
+
+  <script>
+    function updateAtlasControls() {
+      const mc = parseFloat(document.getElementById('atlas-slider-mc').value);
+      const eta = parseFloat(document.getElementById('atlas-slider-eta').value);
+      const dl = parseFloat(document.getElementById('atlas-slider-dl').value);
+
+      document.getElementById('atlas-val-mc').textContent = mc.toFixed(2) + ' M_☉';
+      document.getElementById('atlas-val-eta').textContent = eta.toFixed(4);
+      document.getElementById('atlas-val-dl').textContent = dl.toFixed(1) + ' Mpc';
+
+      const M = mc / Math.pow(eta, 0.6);
+      document.getElementById('atlas-calc-m').textContent = M.toFixed(1) + ' M_☉';
+
+      // R_ISCO = 6 G M / c^2 = 8.8596 * M km
+      const r_isco_km = 8.8596 * M;
+      document.getElementById('atlas-calc-risco').textContent = r_isco_km.toFixed(1) + ' km';
+
+      // f_ISCO = C_ISCO / M = 4397.17 / M Hz
+      const f_isco = 4397.17 / M;
+      document.getElementById('atlas-calc-fisco').textContent = f_isco.toFixed(2) + ' Hz';
+
+      const tau = 0.81 * Math.pow(28.1 / mc, 5/3);
+      document.getElementById('atlas-calc-tau').textContent = tau.toFixed(2) + ' s';
+
+      // Dynamic curve position
+      const logMin = Math.log(20);
+      const logMax = Math.log(100);
+      const xClamped = Math.max(20, Math.min(100, f_isco));
+      const xPos = 60 + ((Math.log(xClamped) - logMin) / (logMax - logMin)) * 650;
+
+      const iscoLine = document.getElementById('plate-isco-line');
+      const iscoDot = document.getElementById('plate-isco-dot');
+      const iscoTick = document.getElementById('plate-isco-tick');
+
+      if (iscoLine) {
+        iscoLine.setAttribute('x1', xPos);
+        iscoLine.setAttribute('x2', xPos);
+      }
+      if (iscoDot) {
+        iscoDot.setAttribute('cx', xPos);
+      }
+      if (iscoTick) {
+        iscoTick.setAttribute('x', xPos);
+        iscoTick.textContent = f_isco.toFixed(1) + ' Hz (ISCO)';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "runs": [
+    {
+      "run_id": "run_a_anchor",
+      "calls": 487407,
+      "cpu_s": 473.15625,
+      "wall_s": 514.946786600005,
+      "status": "COMPLETED",
+      "is_complete": true,
+      "has_valid_accounting": true,
+      "recorded_at": 1795070196.4635944
+    }
+  ],
+  "cumulative_calls": 487407,
+  "cumulative_cpu_s": 473.15625,
+  "cumulative_wall_s": 514.946786600005,
+  "remaining_calls": 712593,
+  "remaining_cpu_s": 1326.84375,
+  "remaining_wall_s": 2485.053213399995,
+  "run_b_gate": {
+    "authorized": true,
+    "gate_blocked_reason": "NONE",
+    "cap_calls": 600000,
+    "cap_cpu_s": 900.0,
+    "cap_wall_s": 1500.0,
+    "required_calls": 530000,
+    "required_cpu_s": 795.0,
+    "required_wall_s": 1300.0,
+    "pass_calls": true,
+    "pass_cpu": true,
+    "pass_wall": true,
+    "remaining_aggregate_calls": 712593,
+    "remaining_aggregate_cpu_s": 1326.84375,
+    "remaining_aggregate_wall_s": 2485.053213399995,
+    "run_a_status": "COMPLETED",
+    "run_a_complete": true,
+    "scientific_acceptance_disclaimer": "The resource gate assesses operational budget feasibility only; it does not constitute scientific acceptance or convergence validation of Run A."
+  }
+}

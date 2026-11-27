@@ -1,0 +1,41 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: gwlab-backend
+    environment:
+      GWLAB_ENV: production
+      GWLAB_API_HOST: 0.0.0.0
+      GWLAB_API_PORT: 8000
+      GWLAB_DATA_ROOT: /data
+      GWLAB_CORS_ORIGINS: ${GWLAB_CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+    ports:
+      - "${GWLAB_API_PORT:-8000}:8000"
+    volumes:
+      - ./experiments/wp6_stage6c_anchor:/data/experiments/wp6_stage6c_anchor:ro
+      - ./reports/demonstrations/wp6_stage5/stage_g2:/data/reports/demonstrations/wp6_stage5/stage_g2:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/status', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    container_name: gwlab-frontend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "${GWLAB_FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped

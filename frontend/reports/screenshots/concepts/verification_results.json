@@ -1,0 +1,88 @@
+{
+  "timestamp": "2026-11-19T11:57:46.126Z",
+  "totalScreenshots": 50,
+  "errors": [],
+  "overflows": [],
+  "interactiveTests": [
+    {
+      "test": "Concept B Waveform Slider Dynamic Trace Update",
+      "passed": true,
+      "initial": {
+        "mcText": "28.10 M_&sun;",
+        "iscoText": "67.65 Hz",
+        "iscoLineX": "560"
+      },
+      "updated": {
+        "mcText": "32.50 M_☉",
+        "iscoText": "58.47 Hz",
+        "iscoLineX": "501.56896010757833"
+      }
+    },
+    {
+      "test": "Concept C Atlas Slider Geometric Metric Update",
+      "passed": true,
+      "initial": {
+        "mcText": "28.10 \\(M_\\odot\\)",
+        "riscoText": "575.9 km",
+        "fiscoText": "67.65 Hz"
+      },
+      "updated": {
+        "mcText": "30.00 M_☉",
+        "riscoText": "615.1 km",
+        "fiscoText": "63.34 Hz"
+      }
+    }
+  ],
+  "screenshots": [
+    "portal_index_desktop_1440x900_light.png",
+    "portal_index_desktop_1440x900_dark.png",
+    "portal_index_tablet_1024x768_light.png",
+    "portal_index_tablet_1024x768_dark.png",
+    "portal_index_mobile_390x844_light.png",
+    "portal_index_mobile_390x844_dark.png",
+    "comparison_sheet_desktop_1440x900_light.png",
+    "comparison_sheet_desktop_1440x900_dark.png",
+    "comparison_sheet_tablet_1024x768_light.png",
+    "comparison_sheet_tablet_1024x768_dark.png",
+    "comparison_sheet_mobile_390x844_light.png",
+    "comparison_sheet_mobile_390x844_dark.png",
+    "concept_a_hero_desktop_1440x900_light.png",
+    "concept_a_hero_desktop_1440x900_dark.png",
+    "concept_a_hero_tablet_1024x768_light.png",
+    "concept_a_hero_tablet_1024x768_dark.png",
+    "concept_a_hero_mobile_390x844_light.png",
+    "concept_a_hero_mobile_390x844_dark.png",
+    "concept_a_waveforms_desktop_1440x900_light.png",
+    "concept_a_waveforms_desktop_1440x900_dark.png",
+    "concept_a_waveforms_tablet_1024x768_light.png",
+    "concept_a_waveforms_tablet_1024x768_dark.png",
+    "concept_a_waveforms_mobile_390x844_light.png",
+    "concept_a_waveforms_mobile_390x844_dark.png",
+    "concept_b_hero_desktop_1440x900_light.png",
+    "concept_b_hero_desktop_1440x900_dark.png",
+    "concept_b_hero_tablet_1024x768_light.png",
+    "concept_b_hero_tablet_1024x768_dark.png",
+    "concept_b_hero_mobile_390x844_light.png",
+    "concept_b_hero_mobile_390x844_dark.png",
+    "concept_b_waveforms_desktop_1440x900_light.png",
+    "concept_b_waveforms_desktop_1440x900_dark.png",
+    "concept_b_waveforms_tablet_1024x768_light.png",
+    "concept_b_waveforms_tablet_1024x768_dark.png",
+    "concept_b_waveforms_mobile_390x844_light.png",
+    "concept_b_waveforms_mobile_390x844_dark.png",
+    "concept_c_hero_desktop_1440x900_light.png",
+    "concept_c_hero_desktop_1440x900_dark.png",
+    "concept_c_hero_tablet_1024x768_light.png",
+    "concept_c_hero_tablet_1024x768_dark.png",
+    "concept_c_hero_mobile_390x844_light.png",
+    "concept_c_hero_mobile_390x844_dark.png",
+    "concept_c_waveforms_desktop_1440x900_light.png",
+    "concept_c_waveforms_desktop_1440x900_dark.png",
+    "concept_c_waveforms_tablet_1024x768_light.png",
+    "concept_c_waveforms_tablet_1024x768_dark.png",
+    "concept_c_waveforms_mobile_390x844_light.png",
+    "concept_c_waveforms_mobile_390x844_dark.png",
+    "concept_b_waveforms_interactive_mc325_dark.png",
+    "concept_c_waveforms_interactive_mc300_light.png"
+  ]
+}

@@ -1,0 +1,144 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+/* GWLab Scientific Editorial Design Tokens (Matching Kerr Geodesics Lab) */
+:root, [data-theme="light"] {
+  --background: #FAF9F6;
+  --surface: #FFFFFF;
+  --surface-hover: #F5F3ED;
+  --surface-subtle: #F3EFEA;
+  --border: #DEDAD2;
+  --border-subtle: #E8E4DC;
+  --foreground: #20201E;
+  --foreground-secondary: #55534F;
+  --muted: #68655F;
+  --muted-light: #7E7B74;
+
+  /* Terracotta single accent */
+  --accent: #B94A24;
+  --accent-hover: #983D1D;
+  --accent-subtle: #FBF4EE;
+  --accent-border: #E3A894;
+
+  /* Plot surface */
+  --plot-bg: #FFFFFF;
+  --plot-grid: #E8E4DC;
+  --plot-axis: #20201E;
+  --plot-trace: #B94A24;
+  --plot-trace-alt: #55534F;
+
+  /* Semantic status colors */
+  --status-ok: #15803D;
+  --status-ok-bg: #F0FDF4;
+  --status-ok-border: #BBF7D0;
+  --status-warn: #B45309;
+  --status-warn-bg: #FFFBEB;
+  --status-warn-border: #FDE68A;
+  --status-error: #B91C1C;
+  --status-error-bg: #FEF2F2;
+  --status-error-border: #FECACA;
+}
+
+[data-theme="dark"] {
+  --background: #0E1013;
+  --surface: #15181C;
+  --surface-hover: #1B1E23;
+  --surface-subtle: #191C21;
+  --border: #262930;
+  --border-subtle: #1E2127;
+  --foreground: #ECEFF1;
+  --foreground-secondary: #B0B5BF;
+  --muted: #9CA3AF;
+  --muted-light: #6B7280;
+
+  /* Restrained accent in dark mode */
+  --accent: #EA580C;
+  --accent-hover: #C2410C;
+  --accent-subtle: #2A170A;
+  --accent-border: #7C2D12;
+
+  /* Plot surface */
+  --plot-bg: #15181C;
+  --plot-grid: #22262E;
+  --plot-axis: #ECEFF1;
+  --plot-trace: #EA580C;
+  --plot-trace-alt: #64748B;
+
+  /* Semantic status colors */
+  --status-ok: #4ADE80;
+  --status-ok-bg: #052E16;
+  --status-ok-border: #14532D;
+  --status-warn: #FBBF24;
+  --status-warn-bg: #451A03;
+  --status-warn-border: #78350F;
+  --status-error: #F87171;
+  --status-error-bg: #450A0A;
+  --status-error-border: #7F1D1D;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-foreground: var(--foreground);
+  --color-foreground-secondary: var(--foreground-secondary);
+  --color-muted: var(--muted);
+  --color-muted-light: var(--muted-light);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-border: var(--accent-border);
+  --color-status-ok: var(--status-ok);
+  --color-status-warn: var(--status-warn);
+  --color-status-error: var(--status-error);
+  --font-serif: var(--font-newsreader), "Newsreader", Georgia, Cambria, serif;
+  --font-sans: var(--font-ibm-plex-sans), "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+}
+
+html {
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* Enforce tabular numerals */
+.tabular-nums, .font-mono, td.numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Hairline border */
+.hairline {
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

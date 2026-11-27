@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GWLab Phase 0 — Design Concepts Portal</title>
+  <link rel="stylesheet" href="shared/styles.css">
+  <script src="shared/scripts.js"></script>
+  <style>
+    :root, [data-theme="light"] {
+      --background: #F8F9FA;
+      --surface: #FFFFFF;
+      --surface-subtle: #F1F3F5;
+      --border: #DDE1E5;
+      --foreground: #1A1D20;
+      --foreground-secondary: #495057;
+      --muted: #6C757D;
+      --accent: #B34726;
+    }
+    [data-theme="dark"] {
+      --background: #0E1117;
+      --surface: #161B22;
+      --surface-subtle: #1F242C;
+      --border: #30363D;
+      --foreground: #E6EDF3;
+      --foreground-secondary: #8B949E;
+      --muted: #6E7681;
+      --accent: #E65E2E;
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+    }
+
+    .portal-container {
+      max-width: 1080px;
+      margin: 3.5rem auto;
+      padding: 0 1.5rem;
+    }
+    .portal-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .portal-badge {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+      display: inline-block;
+    }
+    .portal-title {
+      font-family: 'Newsreader', serif;
+      font-size: 2.8rem;
+      font-weight: 400;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+    .portal-subtitle {
+      font-size: 1.1rem;
+      color: var(--foreground-secondary);
+      max-width: 680px;
+      margin: 0 auto 1.5rem;
+      line-height: 1.6;
+    }
+
+    .portal-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    @media (max-width: 860px) {
+      .portal-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .portal-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .portal-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .portal-card-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .portal-card-name {
+      font-family: 'Newsreader', serif;
+      font-size: 1.4rem;
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+    .portal-card-desc {
+      font-size: 0.82rem;
+      color: var(--foreground-secondary);
+      line-height: 1.55;
+      margin-bottom: 1.5rem;
+      flex: 1;
+    }
+    .portal-card-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .portal-link {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.5rem 0.75rem;
+      border-radius: 3px;
+      text-decoration: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface-subtle);
+      color: var(--foreground);
+      border: 1px solid var(--border);
+      transition: all 0.15s ease;
+    }
+    .portal-link:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .comparison-banner {
+      background: var(--surface);
+      border: 2px solid var(--accent);
+      border-radius: 6px;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div style="position: absolute; top: 1rem; right: 1.5rem;">
+    <button class="theme-toggle-btn" onclick="toggleTheme()" style="background: var(--surface); border: 1px solid var(--border); padding: 0.35rem 0.75rem; border-radius: 3px; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--foreground); cursor: pointer;">
+      <span class="theme-icon">☀️</span> THEME
+    </button>
+  </div>
+
+  <main class="portal-container">
+    <header class="portal-header">
+      <span class="portal-badge">GWLab &middot; Phase 0 Art Direction</span>
+      <h1 class="portal-title">Three Distinct Visual Architectures</h1>
+      <p class="portal-subtitle">
+        Explore three candidate visual identities for the GWLab scientific portfolio and research application. 
+        Each features a custom Hero composition and an interactive Waveforms inner page.
+      </p>
+    </header>
+
+    <div class="portal-grid">
+      <!-- Concept A -->
+      <div class="portal-card">
+        <div class="portal-card-tag">DIRECTION A &middot; SCHOLARLY</div>
+        <h2 class="portal-card-name">Concept A: Scientific Journal</h2>
+        <p class="portal-card-desc">
+          Philosophical Transactions / Living Reviews in Relativity scholarly aesthetic. Asymmetric 2-column editorial grid, academic folio headers, mathematical sidenotes, and Plate figures.
+        </p>
+        <div class="portal-card-links">
+          <a href="concept-a/index.html" class="portal-link">
+            <span>Hero Page (Index)</span>
+            <span>&rarr;</span>
+          </a>
+          <a href="concept-a/waveforms.html" class="portal-link">
+            <span>Waveforms Plate Page</span>
+            <span>&rarr;</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Concept B -->
+      <div class="portal-card">
+        <div class="portal-card-tag">DIRECTION B &middot; INSTRUMENT</div>
+        <h2 class="portal-card-name">Concept B: Instrument Laboratory</h2>
+        <p class="portal-card-desc">
+          Caltech / LIGO control room console. High-density telemetry racks, modular bays, illuminated CRT oscilloscope with reticle grid and vector beam, and stepped parameter dials.
+        </p>
+        <div class="portal-card-links">
+          <a href="concept-b/index.html" class="portal-link">
+            <span>Hero Page (Index)</span>
+            <span>&rarr;</span>
+          </a>
+          <a href="concept-b/waveforms.html" class="portal-link">
+            <span>Waveform Analyzer Page</span>
+            <span>&rarr;</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Concept C -->
+      <div class="portal-card">
+        <div class="portal-card-tag">DIRECTION C &middot; GEOMETRIC ATLAS</div>
+        <h2 class="portal-card-name">Concept C: Contemporary Physics Atlas</h2>
+        <p class="portal-card-desc">
+          Contemporary geometric gravitation monograph. Expansive wavefront geometry canvas, celestial coordinate grid, quadrupole spirals, and multi-scale regime breakdown.
+        </p>
+        <div class="portal-card-links">
+          <a href="concept-c/index.html" class="portal-link">
+            <span>Hero Page (Index)</span>
+            <span>&rarr;</span>
+          </a>
+          <a href="concept-c/waveforms.html" class="portal-link">
+            <span>Waveform Geometry Atlas</span>
+            <span>&rarr;</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison Banner -->
+    <div class="comparison-banner">
+      <div>
+        <h3 style="font-family: 'Newsreader', serif; font-size: 1.3rem; margin-bottom: 0.25rem;">Direct Side-by-Side Comparison</h3>
+        <p style="font-size: 0.85rem; color: var(--foreground-secondary); margin: 0;">Compare all 3 Hero designs, 3 Waveforms pages, and the architectural evaluation matrix.</p>
+      </div>
+      <a href="comparison.html" style="background: var(--accent); color: #FFFFFF; text-decoration: none; font-family: 'IBM Plex Sans', sans-serif; font-size: 0.85rem; font-weight: 600; padding: 0.65rem 1.25rem; border-radius: 4px;">
+        Open Comparison Sheet &rarr;
+      </a>
+    </div>
+  </main>
+
+  <footer style="text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); margin-top: 3rem; padding-bottom: 2rem;">
+    GWLab // Deterministic Scientific Presentation Architecture // Phase 0
+  </footer>
+
+</body>
+</html>
