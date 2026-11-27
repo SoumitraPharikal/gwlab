@@ -38,7 +38,7 @@ def test_resolve_safe_artifact_path_rejections():
         resolve_safe_artifact_path("")
 
     with pytest.raises(ValueError, match="Absolute paths are prohibited"):
-        resolve_safe_artifact_path("C:/Users/Soumitra/Desktop/escaped.json")
+        resolve_safe_artifact_path(str(Path("/escaped.json").resolve()))
 
     with pytest.raises(ValueError, match="escapes repository root"):
         resolve_safe_artifact_path("../../outside_repo.json")
