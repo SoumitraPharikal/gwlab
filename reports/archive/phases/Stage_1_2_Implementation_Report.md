@@ -49,11 +49,11 @@ Following the independent review of commit `d56c99a`, three final targeted scien
 ### 2. Status of Stage 0 Mathematical Audit Documents
 
 All Stage 0 mathematical consistency audit documents were located and inspected in the workspace root:
-- `Stage_0_2_Mathematical_Consistency_Audit.md` (46,558 B)
-- `Stage_0_3_Final_Mathematical_Consistency_Audit.md` (56,755 B)
-- `Stage_0_4_Final_Scientific_Corrections.md` (45,770 B)
-- `Stage_0_5_Final_Approval_Readiness.md` (46,717 B)
-- `Stage_0_6_Final_Consistency_and_Approval.md` (49,339 B)
+- `reports/archive/stage0/Stage_0_2_Mathematical_Consistency_Audit.md` (46,558 B)
+- `reports/archive/stage0/Stage_0_3_Final_Mathematical_Consistency_Audit.md` (56,755 B)
+- `reports/archive/stage0/Stage_0_4_Final_Scientific_Corrections.md` (45,770 B)
+- `reports/archive/stage0/Stage_0_5_Final_Approval_Readiness.md` (46,717 B)
+- `reports/archive/stage0/Stage_0_6_Final_Consistency_and_Approval.md` (49,339 B)
 
 The mathematical conventions verified include:
 - Discrete Tukey window midpoint formula: $M_{\mathrm{taper}} = \lfloor \alpha M / 2 \rfloor$.

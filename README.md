@@ -6,7 +6,7 @@
 
 The application runs on a **Next.js `16.4.6` frontend** (`frontend/`) backed by a **FastAPI service** (`src/gwlab/api/`) over the deterministic **`gw_inference` scientific engine** (`src/gw_inference/`).
 
-> **Important Note on Historical Docs:** The original Streamlit-era architecture in [GWLab_Phase0_Architecture_and_Repository_Audit.md](reports/GWLab_Phase0_Architecture_and_Repository_Audit.md) was superseded by the Next.js + FastAPI migration in [GWLab_Phase4A_Frontend_Migration_Report.md](reports/GWLab_Phase4A_Frontend_Migration_Report.md). Historical reports under `reports/` are preserved as point-in-time records.
+> **Important Note on Historical Docs:** The original Streamlit-era architecture in [GWLab_Phase0_Architecture_and_Repository_Audit.md](reports/archive/phases/GWLab_Phase0_Architecture_and_Repository_Audit.md) was superseded by the Next.js + FastAPI migration in [GWLab_Phase4A_Frontend_Migration_Report.md](reports/archive/phases/GWLab_Phase4A_Frontend_Migration_Report.md). Historical reports under `reports/archive/` are preserved as point-in-time records.
 
 ---
 
@@ -15,9 +15,9 @@ The application runs on a **Next.js `16.4.6` frontend** (`frontend/`) backed by 
 - **[User Manual](docs/USER_MANUAL.md)** — Installation, environment configuration, local/Docker startup, route-by-route usage guide, and troubleshooting.
 - **[Architecture Documentation](docs/ARCHITECTURE.md)** — Frontend/backend boundaries, FastAPI endpoints, `gw_inference` scientific engine, artifact provenance, and testing workflow.
 - **Release & Validation Reports:**
-  - [Phase 6A System Validation Report](reports/GWLab_Phase6A_System_Validation_Report.md)
-  - [Phase 6B Deployment Packaging Report](reports/GWLab_Phase6B_Deployment_Packaging_Report.md)
-  - [Phase 6C Final Documentation & Release Readiness Report](reports/GWLab_Phase6C_Final_Documentation_and_Release_Readiness_Report.md)
+  - [Phase 6A System Validation Report](reports/archive/phases/GWLab_Phase6A_System_Validation_Report.md)
+  - [Phase 6B Deployment Packaging Report](reports/archive/phases/GWLab_Phase6B_Deployment_Packaging_Report.md)
+  - [Phase 6C Final Documentation & Release Readiness Report](reports/archive/phases/GWLab_Phase6C_Final_Documentation_and_Release_Readiness_Report.md)
 
 ---
 

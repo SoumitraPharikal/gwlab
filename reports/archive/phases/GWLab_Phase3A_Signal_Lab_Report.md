@@ -230,8 +230,8 @@ The automated browser verification script ([test_gwlab_phase3a_browser.py](file:
   * Parameter Reset Button: Clicked and reactive state verified
 - **Console Errors:** Exactly **0 errors** observed.
 - **Captured Workstation Screenshots:**
-  * Desktop ($1440 \times 900$): [gwlab_phase3a_signal_lab_desktop.png](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/reports/figures/gwlab_phase3a_signal_lab_desktop.png) ($126.9\,\text{KB}$)
-  * Tablet ($1024 \times 768$): [gwlab_phase3a_signal_lab_tablet.png](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/reports/figures/gwlab_phase3a_signal_lab_tablet.png) ($102.6\,\text{KB}$)
+  * Desktop ($1440 \times 900$): [gwlab_phase3a_signal_lab_desktop.png](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/reports/screenshots/phases/gwlab_phase3a_signal_lab_desktop.png) ($126.9\,\text{KB}$)
+  * Tablet ($1024 \times 768$): [gwlab_phase3a_signal_lab_tablet.png](file:///c:/Users/Soumitra/Desktop/GW-matched-filtering-and-baysian-interference/reports/screenshots/phases/gwlab_phase3a_signal_lab_tablet.png) ($102.6\,\text{KB}$)
 
 ---
 

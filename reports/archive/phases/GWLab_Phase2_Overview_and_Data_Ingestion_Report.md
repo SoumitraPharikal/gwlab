@@ -259,8 +259,8 @@ To verify real-world rendering, DOM structure, and UI responsiveness, an automat
   * Preserved Budget Reserve rendered: `"712,593"`
   * Governance and Safety text rendered: `"Stage 6D Closed"`, `"Read-Only Archive"`
 - **Viewport Renderings Captured:**
-  * Desktop ($1440 \times 900$): `reports/figures/gwlab_phase2_overview_desktop.png` ($151.3\,\text{KB}$)
-  * Tablet ($1024 \times 768$): `reports/figures/gwlab_phase2_overview_tablet.png` ($112.5\,\text{KB}$)
+  * Desktop ($1440 \times 900$): `reports/screenshots/phases/gwlab_phase2_overview_desktop.png` ($151.3\,\text{KB}$)
+  * Tablet ($1024 \times 768$): `reports/screenshots/phases/gwlab_phase2_overview_tablet.png` ($112.5\,\text{KB}$)
 - **Browser Console Errors:** Exactly **0 errors** observed.
 
 ---
